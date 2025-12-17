@@ -1,56 +1,89 @@
 
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+
+declare global {
+  interface Window {
+    turnstile?: any;
+  }
+}
 
 export default function Home() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
-    "idle"
-  );
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">("idle");
   const [message, setMessage] = useState("");
+  const tokenRef = useRef<string | null>(null);
+  const widgetRef = useRef<HTMLDivElement>(null);
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL;
+  // Load Turnstile script
+  useEffect(() => {
+    if (window.turnstile) return;
+
+    const script = document.createElement("script");
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+  }, []);
+
+  // Render Turnstile widget
+  useEffect(() => {
+    if (!window.turnstile || !widgetRef.current) return;
+
+    window.turnstile.render(widgetRef.current, {
+      sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY,
+      callback: (token: string) => {
+        tokenRef.current = token;
+      },
+      "expired-callback": () => {
+        tokenRef.current = null;
+      },
+    });
+  }, []);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!email) return;
+
+    if (!tokenRef.current) {
+      setStatus("error");
+      setMessage("Please complete the verification.");
+      return;
+    }
 
     setStatus("loading");
     setMessage("");
 
     try {
-      const res = await fetch(`${API_BASE}/leads`, {
+      const res = await fetch("https://problabs-backend.onrender.com/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({
+          email,
+          turnstile_token: tokenRef.current,
+        }),
       });
 
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error("Request failed");
-      }
-
-      if (data.created) {
-        setMessage("✅ You’re on the list!");
-      } else {
-        setMessage("ℹ️ You’re already signed up.");
+      if (!res.ok || !data.ok) {
+        throw new Error(data?.detail || "Signup failed");
       }
 
       setStatus("success");
+      setMessage("You're on the list. We'll be in touch 🚀");
       setEmail("");
-    } catch (err) {
+      tokenRef.current = null;
+    } catch (err: any) {
       setStatus("error");
-      setMessage("❌ Something went wrong. Please try again.");
+      setMessage(err.message || "Something went wrong.");
     }
   }
 
   return (
     <main className="min-h-screen bg-white text-gray-900 flex items-center justify-center px-6">
-      <div className="w-full max-w-xl rounded-2xl border border-gray-200 p-8 shadow-sm">
+      <div className="w-full max-w-xl rounded-2xl border border-gray-200 p-8">
         <h1 className="text-4xl font-semibold tracking-tight">ProbLabs</h1>
-
         <p className="mt-2 text-lg text-gray-600">
           AI-Powered Lottery Intelligence.
         </p>
@@ -58,50 +91,48 @@ export default function Home() {
         <div className="mt-6 space-y-3 text-gray-700">
           <p>
             We’re building a data-driven analytics platform for Florida Lottery
-            games:
-            <span className="font-medium"> Fantasy 5</span>,{" "}
-            <span className="font-medium">Pick 3</span>,{" "}
-            <span className="font-medium">Pick 4</span>, and{" "}
-            <span className="font-medium">Cash Pop</span>.
+            games: <strong>Fantasy 5</strong>, <strong>Pick 3</strong>,{" "}
+            <strong>Pick 4</strong>, and <strong>Cash Pop</strong>.
           </p>
           <p className="text-gray-500">Launching soon.</p>
         </div>
 
-        <div className="mt-8">
-          <h2 className="text-xl font-semibold">Get early access</h2>
-          <p className="mt-1 text-gray-600">
-            Join the waitlist and we’ll notify you when subscriptions open.
-          </p>
+        <form onSubmit={handleSubmit} className="mt-8 space-y-4">
+          <label className="block text-sm font-medium">
+            Get early access
+          </label>
 
-          <form onSubmit={handleSubmit} className="mt-4 flex gap-3">
+          <div className="flex gap-3">
             <input
               type="email"
               required
               placeholder="you@example.com"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="flex-1 rounded-lg border border-gray-300 px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-black"
+              className="flex-1 rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-black"
             />
-
             <button
               type="submit"
               disabled={status === "loading"}
-              className="rounded-lg bg-black px-5 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+              className="rounded-md bg-black px-5 py-2 text-white hover:bg-gray-900 disabled:opacity-50"
             >
               {status === "loading" ? "Joining…" : "Join"}
             </button>
-          </form>
+          </div>
+
+          {/* Turnstile widget */}
+          <div ref={widgetRef} />
 
           {message && (
             <p
-              className={`mt-3 text-sm ${
-                status === "error" ? "text-red-600" : "text-gray-700"
+              className={`text-sm ${
+                status === "success" ? "text-green-600" : "text-red-600"
               }`}
             >
               {message}
             </p>
           )}
-        </div>
+        </form>
       </div>
     </main>
   );
