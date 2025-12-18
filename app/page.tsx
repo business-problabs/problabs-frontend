@@ -8,7 +8,6 @@ declare global {
   interface Window {
     turnstile?: {
       render: (el: HTMLElement, options: any) => string;
-      execute: (widgetId: string) => void;
       reset: (widgetId?: string) => void;
     };
   }
@@ -16,20 +15,17 @@ declare global {
 
 export default function Page() {
   const [email, setEmail] = useState("");
+  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
 
-  // Turnstile mount node
   const widgetRef = useRef<HTMLDivElement | null>(null);
-  // Turnstile widget id from render()
   const widgetIdRef = useRef<string | null>(null);
-  // Resolver for awaiting token from Turnstile callback
-  const tokenPromiseResolverRef = useRef<((token: string) => void) | null>(null);
 
   const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
   const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
 
-  // Render Turnstile once script loads
+  // Render visible Turnstile
   useEffect(() => {
     const tryRender = () => {
       if (!SITE_KEY) return;
@@ -39,78 +35,61 @@ export default function Page() {
 
       widgetIdRef.current = window.turnstile.render(widgetRef.current, {
         sitekey: SITE_KEY,
-        size: "invisible",
         theme: "light",
-        callback: (token: string) => {
-          // resolve the pending promise in join()
-          if (tokenPromiseResolverRef.current) {
-            tokenPromiseResolverRef.current(token);
-            tokenPromiseResolverRef.current = null;
-          }
-        },
-        "error-callback": () => {
-          setMessage("Security check failed. Please try again.");
-          tokenPromiseResolverRef.current = null;
+        // visible by default
+        callback: (t: string) => {
+          setToken(t);
+          setMessage(null);
         },
         "expired-callback": () => {
-          tokenPromiseResolverRef.current = null;
+          setToken(null);
+          setMessage("Verification expired. Please complete it again.");
+        },
+        "error-callback": () => {
+          setToken(null);
+          setMessage("Verification failed. Please try again.");
         },
       });
     };
 
-    // Poll briefly so we render as soon as script becomes available
     const interval = setInterval(tryRender, 250);
     tryRender();
 
     return () => clearInterval(interval);
   }, [SITE_KEY]);
 
-  // One function used by both the form submit and the button click
+  const resetTurnstile = () => {
+    if (window.turnstile && widgetIdRef.current) {
+      window.turnstile.reset(widgetIdRef.current);
+    }
+    setToken(null);
+  };
+
   const join = async () => {
     console.log("JOIN CLICKED");
+
     setMessage(null);
 
-    // Sanity checks
     if (!API_BASE) {
-      console.log("STOP: API_BASE missing");
       setMessage("Missing NEXT_PUBLIC_API_BASE_URL in Vercel env vars.");
       return;
     }
     if (!SITE_KEY) {
-      console.log("STOP: SITE_KEY missing");
       setMessage("Missing NEXT_PUBLIC_TURNSTILE_SITE_KEY in Vercel env vars.");
       return;
     }
-    if (!window.turnstile || !widgetIdRef.current) {
-      console.log("STOP: Turnstile not ready", {
-        turnstile: !!window.turnstile,
-        widgetId: widgetIdRef.current,
-      });
-      setMessage("Security check not ready yet. Please try again in a moment.");
+    if (!email) {
+      setMessage("Please enter an email.");
+      return;
+    }
+    if (!token) {
+      setMessage("Please complete the verification.");
       return;
     }
 
     setLoading(true);
 
     try {
-      // 1) Execute Turnstile and await token
-      const token = await new Promise<string>((resolve, reject) => {
-        tokenPromiseResolverRef.current = resolve;
-
-        window.turnstile!.execute(widgetIdRef.current!);
-
-        // Timeout safety
-        setTimeout(() => {
-          if (tokenPromiseResolverRef.current) {
-            tokenPromiseResolverRef.current = null;
-            reject(new Error("Timed out waiting for Turnstile token."));
-          }
-        }, 8000);
-      });
-
-      console.log("TOKEN RECEIVED");
-
-      // 2) POST to backend
       const base = API_BASE.replace(/\/$/, "");
       const res = await fetch(`${base}/leads`, {
         method: "POST",
@@ -124,23 +103,18 @@ export default function Page() {
       console.log("FETCH SENT", res.status);
 
       const data = await res.json().catch(() => ({}));
-
       if (!res.ok) {
-        const detail =
-          (data && (data.detail || data.message)) || `Error ${res.status}`;
-        throw new Error(detail);
+        throw new Error(data?.detail || data?.message || `Error ${res.status}`);
       }
 
       setEmail("");
       setMessage("✅ You’re on the list. Launching soon!");
+      resetTurnstile();
     } catch (err: any) {
       console.error("JOIN FAILED", err);
       setMessage(err?.message || "Something went wrong.");
+      resetTurnstile();
     } finally {
-      // Reset Turnstile so it can be executed again next time
-      if (window.turnstile && widgetIdRef.current) {
-        window.turnstile.reset(widgetIdRef.current);
-      }
       setLoading(false);
     }
   };
@@ -196,8 +170,8 @@ export default function Page() {
               </button>
             </div>
 
-            {/* Turnstile widget mount point (invisible) */}
-            <div ref={widgetRef} style={{ display: "none" }} />
+            {/* ✅ Visible Turnstile widget */}
+            <div ref={widgetRef} className="mt-4" />
 
             {message && <p className="text-sm text-gray-700">{message}</p>}
           </form>
