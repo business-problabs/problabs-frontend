@@ -36,7 +36,6 @@ export default function Page() {
       widgetIdRef.current = window.turnstile.render(widgetRef.current, {
         sitekey: SITE_KEY,
         theme: "light",
-        // visible by default
         callback: (t: string) => {
           setToken(t);
           setMessage(null);
@@ -67,7 +66,6 @@ export default function Page() {
 
   const join = async () => {
     console.log("JOIN CLICKED");
-
     setMessage(null);
 
     if (!API_BASE) {
@@ -78,7 +76,10 @@ export default function Page() {
       setMessage("Missing NEXT_PUBLIC_TURNSTILE_SITE_KEY in Vercel env vars.");
       return;
     }
-    if (!email) {
+
+    const normalizedEmail = email.trim();
+
+    if (!normalizedEmail) {
       setMessage("Please enter an email.");
       return;
     }
@@ -95,8 +96,8 @@ export default function Page() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          email,
-          turnstile_token: token,
+          email: normalizedEmail,
+          token: token, // ✅ MUST be "token" to match backend LeadIn
         }),
       });
 
