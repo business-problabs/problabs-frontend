@@ -13,6 +13,25 @@ declare global {
   }
 }
 
+type LeadResponse =
+  | {
+      ok: true;
+      created: true;
+      message?: string;
+      lead?: { id: number; email: string; created_at: string };
+    }
+  | {
+      ok: true;
+      created: false;
+      message?: string;
+      email?: string;
+    }
+  | {
+      ok?: boolean;
+      message?: string;
+      detail?: any;
+    };
+
 export default function Page() {
   const [email, setEmail] = useState("");
   const [token, setToken] = useState<string | null>(null);
@@ -65,6 +84,8 @@ export default function Page() {
   };
 
   const join = async () => {
+    if (loading) return; // prevent double clicks
+
     console.log("JOIN CLICKED");
     setMessage(null);
 
@@ -97,19 +118,34 @@ export default function Page() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: normalizedEmail,
-          token: token, // ✅ MUST be "token" to match backend LeadIn
+          turnstile_token: token, // ✅ matches backend LeadIn
         }),
       });
 
       console.log("FETCH SENT", res.status);
 
-      const data = await res.json().catch(() => ({}));
+      const data: LeadResponse = await res.json().catch(() => ({} as any));
+
       if (!res.ok) {
-        throw new Error(data?.detail || data?.message || `Error ${res.status}`);
+        // FastAPI "detail" can be string OR object
+        const detail = (data as any)?.detail;
+        const detailMsg =
+          typeof detail === "string"
+            ? detail
+            : typeof detail?.message === "string"
+              ? detail.message
+              : null;
+
+        throw new Error(detailMsg || (data as any)?.message || `Error ${res.status}`);
       }
 
+      // Show server-provided message if available
+      setMessage((data as any)?.message || "✅ Success!");
+
+      // Clear email either way (created or already exists)
       setEmail("");
-      setMessage("✅ You’re on the list. Launching soon!");
+
+      // Reset Turnstile so future submissions require a fresh token
       resetTurnstile();
     } catch (err: any) {
       console.error("JOIN FAILED", err);
@@ -119,6 +155,8 @@ export default function Page() {
       setLoading(false);
     }
   };
+
+  const joinDisabled = loading || !email.trim() || !token;
 
   return (
     <>
@@ -164,7 +202,7 @@ export default function Page() {
               <button
                 type="button"
                 onClick={join}
-                disabled={loading}
+                disabled={joinDisabled}
                 className="rounded-md bg-black px-5 py-2 text-white disabled:opacity-50"
               >
                 {loading ? "…" : "Join"}
