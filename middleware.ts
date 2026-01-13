@@ -9,27 +9,30 @@ function unauthorized() {
   });
 }
 
-// ✅ Next 16 proxy convention expects this export name
-export function proxy(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const user = process.env.ADMIN_BASIC_USER;
   const pass = process.env.ADMIN_BASIC_PASS;
 
-  // If creds are not set, do not block (prevents accidental lockout)
-  if (!user || !pass) return NextResponse.next();
+  // Safety: do not lock site if env vars missing
+  if (!user || !pass) {
+    return NextResponse.next();
+  }
 
   const auth = req.headers.get("authorization");
-  if (!auth?.startsWith("Basic ")) return unauthorized();
-
-  const encoded = auth.slice("Basic ".length);
-  let decoded = "";
-  try {
-    decoded = Buffer.from(encoded, "base64").toString("utf8");
-  } catch {
+  if (!auth?.startsWith("Basic ")) {
     return unauthorized();
   }
 
+  const decoded = Buffer.from(
+    auth.slice("Basic ".length),
+    "base64"
+  ).toString("utf8");
+
   const [u, p] = decoded.split(":");
-  if (u !== user || p !== pass) return unauthorized();
+
+  if (u !== user || p !== pass) {
+    return unauthorized();
+  }
 
   return NextResponse.next();
 }
