@@ -43,7 +43,10 @@ export function middleware(req: NextRequest) {
 
   if (u !== user || p !== pass) return unauthorized();
 
-  return NextResponse.next();
+  const res = NextResponse.next();
+res.headers.set("X-Robots-Tag", "noindex, nofollow");
+return res;
+
 }
 
 export const config = {
