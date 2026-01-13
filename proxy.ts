@@ -9,7 +9,8 @@ function unauthorized() {
   });
 }
 
-export function middleware(req: NextRequest) {
+// ✅ Next 16 proxy convention expects this export name
+export function proxy(req: NextRequest) {
   const user = process.env.ADMIN_BASIC_USER;
   const pass = process.env.ADMIN_BASIC_PASS;
 
