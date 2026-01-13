@@ -1,193 +1,72 @@
-"use client";
+// app/admin-stats/page.tsx
+import "server-only";
+import { getAdminStats, type AdminStats } from "@/lib/adminApi";
 
-import { useEffect, useMemo, useState } from "react";
-
-type DailyPoint = { date: string; count: number };
-
-type StatsResponse = {
-  range_days: number;
-  start_date: string;
-  end_date: string;
-  total_30d: number;
-  total_all: number;
-  today_count?: number;
-  yesterday_count?: number;
-  last_7d_total?: number;
-  avg_7d_per_day?: number;
-  avg_30d_per_day?: number;
-  daily: DailyPoint[];
-};
-
-const LS_KEY = "problabs_admin_key";
-
-function fmt(n: number | undefined) {
+function fmt(n: number | undefined | null) {
   if (n === undefined || n === null) return "-";
   return new Intl.NumberFormat().format(n);
 }
 
-export default function AdminStatsPage() {
-  const backendBase =
-    process.env.NEXT_PUBLIC_BACKEND_URL || "https://problabs-backend.onrender.com";
-
-  // IMPORTANT: Your backend uses ADMIN_PATH, and yours is currently: a9f3d-admin
-  // You can override via env var if you ever change it.
-  const adminPath = process.env.NEXT_PUBLIC_ADMIN_PATH || "a9f3d-admin";
-
-  const statsUrl = useMemo(
-    () => `${backendBase.replace(/\/$/, "")}/${adminPath}/stats`,
-    [backendBase, adminPath]
+function Card({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="rounded-2xl border p-4 shadow-sm bg-white">
+      <div className="text-xs text-gray-500">{title}</div>
+      <div className="mt-1 text-2xl font-semibold text-gray-900">{value}</div>
+    </div>
   );
+}
 
-  const [adminKey, setAdminKey] = useState("");
-  const [stats, setStats] = useState<StatsResponse | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState<string>("");
+export default async function AdminStatsPage() {
+  let stats: AdminStats | null = null;
+  let error: string | null = null;
 
-  useEffect(() => {
-    const saved = localStorage.getItem(LS_KEY);
-    if (saved) setAdminKey(saved);
-  }, []);
+  try {
+    stats = await getAdminStats();
+  } catch (e: any) {
+    error = e?.message ?? "Failed to load admin stats.";
+  }
 
-  const saveKey = () => {
-    localStorage.setItem(LS_KEY, adminKey.trim());
-  };
-
-  const clearKey = () => {
-    localStorage.removeItem(LS_KEY);
-    setAdminKey("");
-    setStats(null);
-    setErr("");
-  };
-
-  const fetchStats = async () => {
-    setErr("");
-    setLoading(true);
-    setStats(null);
-
-    try {
-      const key = adminKey.trim();
-      if (!key) {
-        setErr("Missing Admin API Key. Paste it above, click Save, then Reload Stats.");
-        return;
-      }
-
-      const res = await fetch(statsUrl, {
-        method: "GET",
-        headers: {
-          "X-Admin-Key": key,
-        },
-        cache: "no-store",
-      });
-
-      if (!res.ok) {
-        const text = await res.text().catch(() => "");
-        throw new Error(`HTTP ${res.status} ${res.statusText}${text ? ` — ${text}` : ""}`);
-      }
-
-      const data = (await res.json()) as StatsResponse;
-      setStats(data);
-    } catch (e: any) {
-      setErr(e?.message || "Failed to load stats.");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const maxDaily = useMemo(() => {
-    if (!stats?.daily?.length) return 0;
-    return Math.max(...stats.daily.map((d) => d.count));
-  }, [stats]);
+  const daily = stats?.daily ?? [];
+  const maxDaily = daily.length ? Math.max(...daily.map((d) => d.count)) : 0;
 
   return (
-    <main style={{ maxWidth: 980, margin: "0 auto", padding: "32px 16px", fontFamily: "system-ui" }}>
-      <h1 style={{ fontSize: 28, marginBottom: 8 }}>ProbLabs Admin Stats</h1>
-      <p style={{ marginTop: 0, color: "#666" }}>
-        Reads from <code>{statsUrl}</code>
-      </p>
-
-      <section
-        style={{
-          border: "1px solid #ddd",
-          borderRadius: 12,
-          padding: 16,
-          marginTop: 16,
-          background: "#fafafa",
-        }}
-      >
-        <h2 style={{ fontSize: 16, margin: "0 0 10px 0" }}>Admin Key</h2>
-        <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
-          <input
-            type="password"
-            value={adminKey}
-            onChange={(e) => setAdminKey(e.target.value)}
-            placeholder="Paste ADMIN_API_KEY here"
-            style={{
-              flex: "1 1 380px",
-              padding: "10px 12px",
-              border: "1px solid #ccc",
-              borderRadius: 10,
-              fontSize: 14,
-            }}
-          />
-          <button
-            onClick={saveKey}
-            style={{
-              padding: "10px 14px",
-              borderRadius: 10,
-              border: "1px solid #111",
-              background: "#111",
-              color: "white",
-              cursor: "pointer",
-            }}
-          >
-            Save
-          </button>
-          <button
-            onClick={fetchStats}
-            style={{
-              padding: "10px 14px",
-              borderRadius: 10,
-              border: "1px solid #111",
-              background: "white",
-              color: "#111",
-              cursor: "pointer",
-            }}
-          >
-            Reload Stats
-          </button>
-          <button
-            onClick={clearKey}
-            style={{
-              padding: "10px 14px",
-              borderRadius: 10,
-              border: "1px solid #ccc",
-              background: "white",
-              color: "#111",
-              cursor: "pointer",
-            }}
-          >
-            Clear
-          </button>
+    <main className="mx-auto max-w-5xl px-6 py-10">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-semibold">ProbLabs Admin Stats</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            Server-rendered. Admin key never reaches the browser.
+          </p>
         </div>
 
-        {err ? (
-          <div style={{ marginTop: 12, color: "#b00020", whiteSpace: "pre-wrap" }}>{err}</div>
-        ) : null}
-        {loading ? <div style={{ marginTop: 12, color: "#333" }}>Loading…</div> : null}
-      </section>
+        {/* ✅ Correct CSV download link */}
+        <div>
+          <a
+            href="/api/admin/leads"
+            className="rounded-md border px-4 py-2 text-sm hover:bg-gray-50"
+          >
+            Download leads CSV
+          </a>
+        </div>
+      </div>
+
+      {error ? (
+        <div className="mt-6 rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <div className="font-medium">Couldn’t load stats</div>
+          <div className="mt-1 opacity-90">{error}</div>
+          <div className="mt-2 text-xs text-red-600">
+            Check env vars: BACKEND_BASE_URL, ADMIN_API_KEY, ADMIN_PATH
+            (restart dev server after changes).
+          </div>
+        </div>
+      ) : null}
 
       {stats ? (
         <>
-          <section style={{ marginTop: 22 }}>
-            <h2 style={{ fontSize: 18, marginBottom: 10 }}>Rollups</h2>
+          <section className="mt-8">
+            <h2 className="text-lg font-semibold">Rollups</h2>
 
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))",
-                gap: 12,
-              }}
-            >
+            <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
               <Card title="Today" value={fmt(stats.today_count)} />
               <Card title="Yesterday" value={fmt(stats.yesterday_count)} />
               <Card title="Last 7 days" value={fmt(stats.last_7d_total)} />
@@ -195,76 +74,52 @@ export default function AdminStatsPage() {
               <Card title="All time" value={fmt(stats.total_all)} />
             </div>
 
-            <div style={{ marginTop: 10, color: "#666", fontSize: 13 }}>
-              Range: {stats.start_date} → {stats.end_date} ({stats.range_days} days)
+            <div className="mt-3 text-xs text-gray-500">
+              Range: {stats.start_date ?? "-"} → {stats.end_date ?? "-"} (
+              {stats.range_days ?? "-"} days)
               <br />
-              Avg 7d/day: {stats.avg_7d_per_day?.toFixed?.(2) ?? "-"} · Avg 30d/day:{" "}
-              {stats.avg_30d_per_day?.toFixed?.(2) ?? "-"}
+              Avg 7d/day: {stats.avg_7d_per_day?.toFixed?.(2) ?? "-"} · Avg
+              30d/day: {stats.avg_30d_per_day?.toFixed?.(2) ?? "-"}
             </div>
           </section>
 
-          <section style={{ marginTop: 22 }}>
-            <h2 style={{ fontSize: 18, marginBottom: 10 }}>Daily (last 30 days)</h2>
+          <section className="mt-10">
+            <h2 className="text-lg font-semibold">Daily (last 30 days)</h2>
 
-            <div style={{ border: "1px solid #eee", borderRadius: 12, overflow: "hidden" }}>
-              {stats.daily.map((d) => {
-                const pct = maxDaily > 0 ? (d.count / maxDaily) * 100 : 0;
-                return (
-                  <div
-                    key={d.date}
-                    style={{
-                      display: "grid",
-                      gridTemplateColumns: "120px 1fr 60px",
-                      alignItems: "center",
-                      gap: 10,
-                      padding: "10px 12px",
-                      borderTop: "1px solid #f0f0f0",
-                    }}
-                  >
-                    <div style={{ fontVariantNumeric: "tabular-nums", color: "#333" }}>{d.date}</div>
+            {daily.length ? (
+              <div className="mt-3 overflow-hidden rounded-2xl border">
+                {daily.map((d) => {
+                  const pct = maxDaily > 0 ? (d.count / maxDaily) * 100 : 0;
+                  return (
                     <div
-                      style={{
-                        height: 10,
-                        borderRadius: 999,
-                        background: "#eee",
-                        overflow: "hidden",
-                      }}
+                      key={d.date}
+                      className="grid grid-cols-[120px_1fr_60px] items-center gap-3 border-t px-4 py-3 first:border-t-0"
                     >
-                      <div
-                        style={{
-                          width: `${pct}%`,
-                          height: "100%",
-                          background: "#111",
-                        }}
-                      />
+                      <div className="text-sm tabular-nums text-gray-800">
+                        {d.date}
+                      </div>
+                      <div className="h-2 overflow-hidden rounded-full bg-gray-200">
+                        <div
+                          className="h-full bg-gray-900"
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                      <div className="text-right text-sm tabular-nums text-gray-800">
+                        {d.count}
+                      </div>
                     </div>
-                    <div style={{ textAlign: "right", fontVariantNumeric: "tabular-nums" }}>
-                      {d.count}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <p className="mt-3 text-sm text-gray-500">
+                No daily breakdown returned from the stats endpoint.
+              </p>
+            )}
           </section>
         </>
       ) : null}
     </main>
-  );
-}
-
-function Card({ title, value }: { title: string; value: string }) {
-  return (
-    <div
-      style={{
-        border: "1px solid #ddd",
-        borderRadius: 12,
-        padding: 14,
-        background: "white",
-      }}
-    >
-      <div style={{ fontSize: 12, color: "#666", marginBottom: 6 }}>{title}</div>
-      <div style={{ fontSize: 22, fontWeight: 700 }}>{value}</div>
-    </div>
   );
 }
 
