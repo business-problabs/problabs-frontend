@@ -1,4 +1,3 @@
-cat > middleware.ts <<'EOF'
 import { NextRequest, NextResponse } from "next/server";
 
 /**
@@ -11,7 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 const NOINDEX = "noindex, nofollow";
 
-// 🔒 Allowed IPs (IPv4 + IPv6)
+// ✅ Allow BOTH your IPv4 and IPv6
 const ALLOWED_IPS = new Set<string>([
   "107.145.105.136",
   "2603:9001:5500:f301:61f6:7e9b:9619:62bd",
@@ -22,11 +21,15 @@ function normalizeIp(ip: string): string {
 }
 
 function getClientIps(req: NextRequest): string[] {
-  // Cloudflare real client IP
+  // 1) Cloudflare (best / most accurate)
   const cf = req.headers.get("cf-connecting-ip");
   if (cf) return [normalizeIp(cf)];
 
-  // Proxy chain
+  // 2) Other proxy headers
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp) return [normalizeIp(realIp)];
+
+  // 3) x-forwarded-for chain (may include multiple)
   const xff = req.headers.get("x-forwarded-for");
   if (!xff) return [];
 
@@ -41,8 +44,13 @@ function parseBasicAuth(req: NextRequest) {
   if (!auth || !auth.startsWith("Basic ")) return null;
 
   const decoded = Buffer.from(auth.slice(6), "base64").toString("utf8");
-  const [user, pass] = decoded.split(":");
-  return { user, pass };
+  const idx = decoded.indexOf(":");
+  if (idx < 0) return null;
+
+  return {
+    user: decoded.slice(0, idx),
+    pass: decoded.slice(idx + 1),
+  };
 }
 
 export function middleware(req: NextRequest) {
@@ -69,10 +77,12 @@ export function middleware(req: NextRequest) {
   const ADMIN_USER = process.env.ADMIN_BASIC_USER || "";
   const ADMIN_PASS = process.env.ADMIN_BASIC_PASS || "";
 
+  // fail-closed if creds missing (still noindex)
   if (!ADMIN_USER || !ADMIN_PASS) {
-    const res = NextResponse.next();
-    res.headers.set("X-Robots-Tag", NOINDEX);
-    return res;
+    return new NextResponse("Misconfigured admin auth", {
+      status: 500,
+      headers: { "X-Robots-Tag": NOINDEX },
+    });
   }
 
   const creds = parseBasicAuth(req);
@@ -95,6 +105,3 @@ export function middleware(req: NextRequest) {
 export const config = {
   matcher: ["/admin-stats/:path*", "/api/admin/:path*"],
 };
-EOF
-
-
