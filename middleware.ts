@@ -1,42 +1,72 @@
-import { NextRequest, NextResponse } from "next/server";
+cd ~/Desktop/problabs-frontend
 
-/**
- * Admin protection middleware
- * Layers:
- * 1) IP allowlist (Cloudflare/Vercel robust, IPv4/IPv6)
- * 2) Basic Auth
- * 3) X-Robots-Tag: noindex, nofollow
- */
+cat > middleware.ts <<'EOF'
+import { NextRequest, NextResponse } from "next/server";
 
 const NOINDEX = "noindex, nofollow";
 
-// ✅ Allow BOTH your IPv4 and IPv6
+// ✅ Allowed IPs (IPv4 + IPv6)
 const ALLOWED_IPS = new Set<string>([
   "107.145.105.136",
   "2603:9001:5500:f301:61f6:7e9b:9619:62bd",
 ]);
 
-function normalizeIp(ip: string): string {
-  return ip.trim().toLowerCase().replace(/^::ffff:/, "");
+function stripBrackets(ip: string): string {
+  // [IPv6] or [IPv6]:port
+  const m = ip.match(/^\[([0-9a-fA-F:]+)\](?::\d+)?$/);
+  return m ? m[1] : ip;
 }
 
-function getClientIps(req: NextRequest): string[] {
-  // 1) Cloudflare (best / most accurate)
-  const cf = req.headers.get("cf-connecting-ip");
-  if (cf) return [normalizeIp(cf)];
+function stripPort(ip: string): string {
+  // IPv4:port
+  if (ip.includes(".") && ip.includes(":")) return ip.split(":")[0];
 
-  // 2) Other proxy headers
-  const realIp = req.headers.get("x-real-ip");
-  if (realIp) return [normalizeIp(realIp)];
+  // IPv6 usually contains ":" so we only strip port if bracket form handled above.
+  return ip;
+}
 
-  // 3) x-forwarded-for chain (may include multiple)
-  const xff = req.headers.get("x-forwarded-for");
-  if (!xff) return [];
+function normalizeIp(raw: string): string {
+  return stripPort(stripBrackets(raw.trim()))
+    .toLowerCase()
+    .replace(/^::ffff:/, "")        // IPv4-mapped IPv6
+    .replace(/%[0-9a-z]+$/i, "")    // IPv6 zone index (rare, but safe)
+    .replace(/^"|"$/g, "")          // stray quotes
+    .trim();
+}
 
-  return xff
+function splitIpList(v: string): string[] {
+  // Could be comma-separated list of IPs, sometimes with spaces
+  return v
     .split(",")
     .map((s) => normalizeIp(s))
     .filter(Boolean);
+}
+
+function collectClientIps(req: NextRequest): string[] {
+  const ips: string[] = [];
+
+  // Cloudflare real client IP (if present)
+  const cf = req.headers.get("cf-connecting-ip");
+  if (cf) ips.push(normalizeIp(cf));
+
+  // Some stacks provide these
+  const real = req.headers.get("x-real-ip");
+  if (real) ips.push(normalizeIp(real));
+
+  // Forwarded header (RFC 7239): for=...
+  const forwarded = req.headers.get("forwarded");
+  // Example: for=192.0.2.60;proto=https;by=203.0.113.43
+  if (forwarded) {
+    const m = forwarded.match(/for="?(\[[0-9a-fA-F:]+\]|[0-9a-fA-F:.]+)"?/i);
+    if (m?.[1]) ips.push(normalizeIp(m[1]));
+  }
+
+  // Standard proxy chain
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) ips.push(...splitIpList(xff));
+
+  // Remove empties & dedupe
+  return Array.from(new Set(ips.filter(Boolean)));
 }
 
 function parseBasicAuth(req: NextRequest) {
@@ -63,10 +93,10 @@ export function middleware(req: NextRequest) {
   if (!isAdmin) return NextResponse.next();
 
   // 1) IP allowlist
-  const ips = getClientIps(req);
-  const allowed = ips.length > 0 && ips.some((ip) => ALLOWED_IPS.has(ip));
+  const clientIps = collectClientIps(req);
+  const ipAllowed = clientIps.some((ip) => ALLOWED_IPS.has(ip));
 
-  if (!allowed) {
+  if (!ipAllowed) {
     return new NextResponse("Forbidden", {
       status: 403,
       headers: { "X-Robots-Tag": NOINDEX },
@@ -77,7 +107,6 @@ export function middleware(req: NextRequest) {
   const ADMIN_USER = process.env.ADMIN_BASIC_USER || "";
   const ADMIN_PASS = process.env.ADMIN_BASIC_PASS || "";
 
-  // fail-closed if creds missing (still noindex)
   if (!ADMIN_USER || !ADMIN_PASS) {
     return new NextResponse("Misconfigured admin auth", {
       status: 500,
@@ -105,3 +134,7 @@ export function middleware(req: NextRequest) {
 export const config = {
   matcher: ["/admin-stats/:path*", "/api/admin/:path*"],
 };
+EOF
+
+wc -l middleware.ts
+
