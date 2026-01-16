@@ -1,46 +1,99 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const NOINDEX = "noindex, nofollow";
+/**
+ * Get client IP safely across Vercel + Cloudflare
+ */
+function getClientIp(req: NextRequest): string {
+  const cf = req.headers.get("cf-connecting-ip");
+  if (cf) return cf.trim();
 
-function unauthorized() {
-  return new NextResponse("Authentication required", {
-    status: 401,
-    headers: {
-      "WWW-Authenticate": 'Basic realm="Probability Labs Admin"',
-      "X-Robots-Tag": NOINDEX,
-    },
-  });
+  const real = req.headers.get("x-real-ip");
+  if (real) return real.trim();
+
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0].trim();
+
+  return "0.0.0.0";
 }
 
-export function middleware(req: NextRequest) {
-  const { pathname } = req.nextUrl;
+/**
+ * Basic Auth check
+ */
+function isValidBasicAuth(req: NextRequest): boolean {
+  const auth = req.headers.get("authorization");
+  if (!auth || !auth.startsWith("Basic ")) return false;
 
-  // Only protect admin routes
-  if (!pathname.startsWith("/api/admin") && !pathname.startsWith("/admin-stats")) {
+  try {
+    const decoded = Buffer.from(auth.split(" ")[1], "base64")
+      .toString("utf-8")
+      .split(":");
+
+    const user = decoded[0];
+    const pass = decoded[1];
+
+    return (
+      user === process.env.ADMIN_BASIC_USER &&
+      pass === process.env.ADMIN_BASIC_PASS
+    );
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Main middleware
+ */
+export function middleware(req: NextRequest) {
+  const pathname = req.nextUrl.pathname;
+
+  // Public routes — do nothing
+  if (
+    pathname === "/" ||
+    pathname.startsWith("/_next") ||
+    pathname.startsWith("/favicon") ||
+    pathname.startsWith("/api") === false
+  ) {
     return NextResponse.next();
   }
 
-  const auth = req.headers.get("authorization");
-  if (!auth || !auth.startsWith("Basic ")) {
-    return unauthorized();
+  // Admin path (hidden)
+  const ADMIN_PATH = process.env.ADMIN_PATH || "";
+  if (!ADMIN_PATH || !pathname.startsWith(ADMIN_PATH)) {
+    return NextResponse.next();
   }
 
-  const decoded = Buffer.from(auth.split(" ")[1], "base64").toString();
-  const [user, pass] = decoded.split(":");
-
-  if (
-    user !== process.env.ADMIN_BASIC_USER ||
-    pass !== process.env.ADMIN_BASIC_PASS
-  ) {
-    return unauthorized();
+  // Debug override
+  if (process.env.ADMIN_DEBUG_IP === "1") {
+    return NextResponse.next();
   }
 
-  const res = NextResponse.next();
-  res.headers.set("X-Robots-Tag", NOINDEX);
-  return res;
+  const clientIp = getClientIp(req);
+
+  // IP allowlist
+  const allowed =
+    process.env.ADMIN_ALLOWED_IPS?.split(",").map((ip) => ip.trim()) || [];
+
+  if (!allowed.includes(clientIp)) {
+    return new NextResponse("Forbidden", { status: 403 });
+  }
+
+  // Basic Auth
+  if (!isValidBasicAuth(req)) {
+    return new NextResponse("Authentication required", {
+      status: 401,
+      headers: {
+        "WWW-Authenticate": 'Basic realm="ProbLabs Admin"',
+      },
+    });
+  }
+
+  return NextResponse.next();
 }
 
+/**
+ * Apply middleware only to admin path
+ */
 export const config = {
-  matcher: ["/api/admin/:path*", "/admin-stats"],
+  matcher: ["/:path*"],
 };
 
