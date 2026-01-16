@@ -1,157 +1,107 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-/**
- * Admin security middleware
- *
- * Protects:
- *  - /admin-stats/*
- *  - /api/admin/leads/*
- *
- * Layers:
- * 1) Optional IP allowlist (ADMIN_ALLOWED_IPS)
- * 2) Basic Auth (ADMIN_BASIC_USER / ADMIN_BASIC_PASS)
- * 3) X-Robots-Tag: noindex, nofollow
- */
-
 const NOINDEX = "noindex, nofollow";
-const REALM = 'Basic realm="Probability Labs Admin"';
 
-/* ----------------------------------------
-   Helpers
------------------------------------------ */
-
-function getClientIp(req: NextRequest): string {
-  // Cloudflare (most reliable)
-  const cf = req.headers.get("cf-connecting-ip");
-  if (cf) return cf.trim();
-
-  // Proxy chain
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0].trim();
-
-  // Fallback
-  // @ts-ignore
-  return (req.ip || "").trim();
-}
-
-function getAllowlist(): string[] {
-  const raw = process.env.ADMIN_ALLOWED_IPS || "";
+/**
+ * Read allowlist from env:
+ * ADMIN_ALLOWED_IPS="107.145.105.136, 2603:9001:..., another-ip"
+ *
+ * Supports comma/space/newline separated values.
+ */
+function getAllowedIps(): string[] {
+  const raw = process.env.ADMIN_ALLOWED_IPS ?? "";
   return raw
-    .split(",")
-    .map((ip) => ip.trim())
+    .split(/[\s,]+/g) // split on commas OR any whitespace/newlines
+    .map((s) => s.trim().toLowerCase())
     .filter(Boolean);
 }
 
-function ipAllowed(clientIp: string, allowlist: string[]): boolean {
-  // Allowlist disabled
-  if (!allowlist.length) return true;
-  if (!clientIp) return false;
+/**
+ * Best-effort client IP extraction behind Cloudflare/Vercel:
+ * 1) cf-connecting-ip (Cloudflare)  ✅ best for real client IPv4/IPv6
+ * 2) x-forwarded-for (first hop)
+ * 3) x-real-ip
+ * 4) req.ip (may be empty in Edge)
+ */
+function getClientIp(req: NextRequest): string {
+  const cf = req.headers.get("cf-connecting-ip");
+  if (cf) return cf.trim().toLowerCase();
 
-  for (const entry of allowlist) {
-    // IPv6 wildcard prefix support
-    // Example: 2603:9001:5500:f301:*
-    if (entry.includes("*")) {
-      const prefix = entry.replace("*", "");
-      if (clientIp.startsWith(prefix)) return true;
-      continue;
-    }
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0]?.trim().toLowerCase() ?? "";
 
-    // Exact match (IPv4 or IPv6)
-    if (clientIp === entry) return true;
-  }
+  const real = req.headers.get("x-real-ip");
+  if (real) return real.trim().toLowerCase();
 
-  return false;
+  return (req.ip ?? "").trim().toLowerCase();
 }
 
-/* ----------------------------------------
-   Responses
------------------------------------------ */
+function withNoIndex(res: NextResponse) {
+  res.headers.set("X-Robots-Tag", NOINDEX);
+  return res;
+}
 
 function unauthorized() {
-  return new NextResponse("Unauthorized", {
-    status: 401,
-    headers: {
-      "WWW-Authenticate": REALM,
-      "X-Robots-Tag": NOINDEX,
-    },
-  });
+  return withNoIndex(
+    new NextResponse("Authentication required", {
+      status: 401,
+      headers: {
+        "WWW-Authenticate": 'Basic realm="Probability Labs Admin"',
+      },
+    })
+  );
 }
 
-function forbidden(req: NextRequest, clientIp: string) {
-  const res = new NextResponse("Forbidden", {
-    status: 403,
-    headers: {
-      "X-Robots-Tag": NOINDEX,
-    },
-  });
+function forbidden(req: NextRequest, clientIp: string, allowedIps: string[]) {
+  const res = new NextResponse("Forbidden", { status: 403 });
+  res.headers.set("X-Robots-Tag", NOINDEX);
 
-  // TEMP debug — remove once finished
-  if (process.env.ADMIN_DEBUG_IP === "1") {
-    const debug = [
-      `client=${clientIp}`,
-      `cf=${req.headers.get("cf-connecting-ip") ?? ""}`,
-      `real=${req.headers.get("x-real-ip") ?? ""}`,
-      `xff=${req.headers.get("x-forwarded-for") ?? ""}`,
-    ].join(" | ");
-    res.headers.set("X-Debug-IP", debug);
+  // Optional debug header (DO NOT leave enabled long-term)
+  if ((process.env.ADMIN_DEBUG_IP ?? "") === "1") {
+    const cf = req.headers.get("cf-connecting-ip") ?? "";
+    const real = req.headers.get("x-real-ip") ?? "";
+    const xff = req.headers.get("x-forwarded-for") ?? "";
+    res.headers.set(
+      "X-Debug-IP",
+      `client=${clientIp} | cf=${cf} | real=${real} | xff=${xff} | allowed=${allowedIps.join(",")}`
+    );
   }
 
   return res;
 }
 
-/* ----------------------------------------
-   Middleware
------------------------------------------ */
-
 export function middleware(req: NextRequest) {
+  const allowedIps = getAllowedIps();
   const clientIp = getClientIp(req);
-  const allowlist = getAllowlist();
 
-  // 1) IP allowlist
-  if (!ipAllowed(clientIp, allowlist)) {
-    return forbidden(req, clientIp);
+  // 1) Optional IP allowlist
+  // If ADMIN_ALLOWED_IPS is empty/not set, we do NOT block by IP.
+  if (allowedIps.length > 0 && !allowedIps.includes(clientIp)) {
+    return forbidden(req, clientIp, allowedIps);
   }
 
   // 2) Basic Auth
   const user = process.env.ADMIN_BASIC_USER;
   const pass = process.env.ADMIN_BASIC_PASS;
 
-  // Safety: never hard-lock prod if env vars missing
+  // Safety: if creds are missing in an environment, don't lock yourself out
   if (!user || !pass) {
-    const res = NextResponse.next();
-    res.headers.set("X-Robots-Tag", NOINDEX);
-    return res;
+    return withNoIndex(NextResponse.next());
   }
 
   const auth = req.headers.get("authorization");
-  if (!auth || !auth.startsWith("Basic ")) {
-    return unauthorized();
-  }
+  if (!auth?.startsWith("Basic ")) return unauthorized();
 
-  let decoded = "";
-  try {
-    decoded = Buffer.from(auth.slice(6), "base64").toString("utf8");
-  } catch {
-    return unauthorized();
-  }
+  const decoded = Buffer.from(auth.slice("Basic ".length), "base64").toString("utf8");
+  const idx = decoded.indexOf(":");
+  const u = idx >= 0 ? decoded.slice(0, idx) : decoded;
+  const p = idx >= 0 ? decoded.slice(idx + 1) : "";
 
-  const sep = decoded.indexOf(":");
-  const u = decoded.slice(0, sep);
-  const p = decoded.slice(sep + 1);
-
-  if (u !== user || p !== pass) {
-    return unauthorized();
-  }
+  if (u !== user || p !== pass) return unauthorized();
 
   // 3) Success
-  const res = NextResponse.next();
-  res.headers.set("X-Robots-Tag", NOINDEX);
-  return res;
+  return withNoIndex(NextResponse.next());
 }
-
-/* ----------------------------------------
-   Routes protected
------------------------------------------ */
 
 export const config = {
   matcher: ["/admin-stats/:path*", "/api/admin/leads/:path*"],
