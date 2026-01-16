@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
 
-/**
- * Get client IP safely across Vercel + Cloudflare
- */
 function getClientIp(req: NextRequest): string {
   const cf = req.headers.get("cf-connecting-ip");
   if (cf) return cf.trim();
@@ -16,84 +13,73 @@ function getClientIp(req: NextRequest): string {
   return "0.0.0.0";
 }
 
-/**
- * Basic Auth check
- */
+function unauthorized() {
+  return new NextResponse("Authentication required", {
+    status: 401,
+    headers: {
+      "WWW-Authenticate": 'Basic realm="ProbLabs Admin"',
+    },
+  });
+}
+
+function forbidden() {
+  return new NextResponse("Forbidden", { status: 403 });
+}
+
 function isValidBasicAuth(req: NextRequest): boolean {
+  const user = process.env.ADMIN_BASIC_USER || "";
+  const pass = process.env.ADMIN_BASIC_PASS || "";
+  if (!user || !pass) return false;
+
   const auth = req.headers.get("authorization");
-  if (!auth || !auth.startsWith("Basic ")) return false;
+  if (!auth?.startsWith("Basic ")) return false;
 
   try {
-    const decoded = Buffer.from(auth.split(" ")[1], "base64")
-      .toString("utf-8")
-      .split(":");
-
-    const user = decoded[0];
-    const pass = decoded[1];
-
-    return (
-      user === process.env.ADMIN_BASIC_USER &&
-      pass === process.env.ADMIN_BASIC_PASS
-    );
+    const decoded = atob(auth.slice("Basic ".length));
+    const [u, p] = decoded.split(":");
+    return u === user && p === pass;
   } catch {
     return false;
   }
 }
 
-/**
- * Main middleware
- */
+function ipAllowed(req: NextRequest): boolean {
+  // IMPORTANT: do not leave ADMIN_DEBUG_IP=1 in production
+  if (process.env.ADMIN_DEBUG_IP === "1") return true;
+
+  const allowed = (process.env.ADMIN_ALLOWED_IPS || "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  // If you want "fail closed", keep this:
+  if (allowed.length === 0) return false;
+
+  const ip = getClientIp(req);
+  return allowed.includes(ip);
+}
+
+function protect(req: NextRequest) {
+  if (!ipAllowed(req)) return forbidden();
+  if (!isValidBasicAuth(req)) return unauthorized();
+  return NextResponse.next();
+}
+
 export function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
-  // Public routes — do nothing
-  if (
-    pathname === "/" ||
-    pathname.startsWith("/_next") ||
-    pathname.startsWith("/favicon") ||
-    pathname.startsWith("/api") === false
-  ) {
-    return NextResponse.next();
-  }
+  // Always protect these two surfaces:
+  if (pathname === "/admin-stats") return protect(req);
+  if (pathname.startsWith("/api/admin/")) return protect(req);
 
-  // Admin path (hidden)
-  const ADMIN_PATH = process.env.ADMIN_PATH || "";
-  if (!ADMIN_PATH || !pathname.startsWith(ADMIN_PATH)) {
-    return NextResponse.next();
-  }
-
-  // Debug override
-  if (process.env.ADMIN_DEBUG_IP === "1") {
-    return NextResponse.next();
-  }
-
-  const clientIp = getClientIp(req);
-
-  // IP allowlist
-  const allowed =
-    process.env.ADMIN_ALLOWED_IPS?.split(",").map((ip) => ip.trim()) || [];
-
-  if (!allowed.includes(clientIp)) {
-    return new NextResponse("Forbidden", { status: 403 });
-  }
-
-  // Basic Auth
-  if (!isValidBasicAuth(req)) {
-    return new NextResponse("Authentication required", {
-      status: 401,
-      headers: {
-        "WWW-Authenticate": 'Basic realm="ProbLabs Admin"',
-      },
-    });
-  }
+  // Optional: also protect any hidden admin path, if you use it
+  const ADMIN_PATH = (process.env.ADMIN_PATH || "").trim(); // e.g. "/a9f3d-admin"
+  if (ADMIN_PATH && pathname.startsWith(ADMIN_PATH)) return protect(req);
 
   return NextResponse.next();
 }
 
-/**
- * Apply middleware only to admin path
- */
 export const config = {
-  matcher: ["/:path*"],
+  matcher: ["/admin-stats", "/api/admin/:path*", "/:path*"],
 };
 
