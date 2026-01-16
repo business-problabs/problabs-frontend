@@ -1,90 +1,96 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-const NOINDEX = "noindex, nofollow";
-
 /**
- * Read allowlist from env:
- * ADMIN_ALLOWED_IPS="107.145.105.136, 2603:9001:..., another-ip"
+ * Admin lock:
+ * 1) Optional IP allowlist via ADMIN_ALLOWED_IPS (comma-separated IPv4/IPv6)
+ * 2) Basic auth via ADMIN_BASIC_USER / ADMIN_BASIC_PASS
+ * 3) X-Robots-Tag: noindex on ALL admin responses
  *
- * Supports comma/space/newline separated values.
+ * Optional:
+ * - ADMIN_DEBUG_IP=1 will add X-Debug-IP header on 403 responses
  */
-function getAllowedIps(): string[] {
-  const raw = process.env.ADMIN_ALLOWED_IPS ?? "";
-  return raw
-    .split(/[\s,]+/g) // split on commas OR any whitespace/newlines
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-}
 
-/**
- * Best-effort client IP extraction behind Cloudflare/Vercel:
- * 1) cf-connecting-ip (Cloudflare)  ✅ best for real client IPv4/IPv6
- * 2) x-forwarded-for (first hop)
- * 3) x-real-ip
- * 4) req.ip (may be empty in Edge)
- */
-function getClientIp(req: NextRequest): string {
-  const cf = req.headers.get("cf-connecting-ip");
-  if (cf) return cf.trim().toLowerCase();
-
-  const xff = req.headers.get("x-forwarded-for");
-  if (xff) return xff.split(",")[0]?.trim().toLowerCase() ?? "";
-
-  const real = req.headers.get("x-real-ip");
-  if (real) return real.trim().toLowerCase();
-
-  return (req.ip ?? "").trim().toLowerCase();
-}
+const NOINDEX = "noindex, nofollow";
 
 function withNoIndex(res: NextResponse) {
   res.headers.set("X-Robots-Tag", NOINDEX);
   return res;
 }
 
-function unauthorized() {
+function unauthorized(realm = 'Basic realm="Probability Labs Admin"') {
   return withNoIndex(
     new NextResponse("Authentication required", {
       status: 401,
-      headers: {
-        "WWW-Authenticate": 'Basic realm="Probability Labs Admin"',
-      },
+      headers: { "WWW-Authenticate": realm },
     })
   );
 }
 
-function forbidden(req: NextRequest, clientIp: string, allowedIps: string[]) {
+function forbidden(debugHeader?: string) {
   const res = new NextResponse("Forbidden", { status: 403 });
   res.headers.set("X-Robots-Tag", NOINDEX);
-
-  // Optional debug header (DO NOT leave enabled long-term)
-  if ((process.env.ADMIN_DEBUG_IP ?? "") === "1") {
-    const cf = req.headers.get("cf-connecting-ip") ?? "";
-    const real = req.headers.get("x-real-ip") ?? "";
-    const xff = req.headers.get("x-forwarded-for") ?? "";
-    res.headers.set(
-      "X-Debug-IP",
-      `client=${clientIp} | cf=${cf} | real=${real} | xff=${xff} | allowed=${allowedIps.join(",")}`
-    );
-  }
-
+  if (debugHeader) res.headers.set("X-Debug-IP", debugHeader);
   return res;
 }
 
-export function middleware(req: NextRequest) {
-  const allowedIps = getAllowedIps();
-  const clientIp = getClientIp(req);
+function parseAllowedIPs(envValue: string | undefined): string[] {
+  if (!envValue) return [];
+  return envValue
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
 
-  // 1) Optional IP allowlist
-  // If ADMIN_ALLOWED_IPS is empty/not set, we do NOT block by IP.
-  if (allowedIps.length > 0 && !allowedIps.includes(clientIp)) {
-    return forbidden(req, clientIp, allowedIps);
+/**
+ * Prefer Cloudflare's real client IP when available.
+ * - cf-connecting-ip: real visitor IP (IPv4/IPv6)
+ * - x-real-ip: sometimes set by proxies
+ * - x-forwarded-for: first IP can be client, but behind Cloudflare can be noisy
+ */
+function getClientIP(req: NextRequest) {
+  const cf = req.headers.get("cf-connecting-ip")?.trim() ?? "";
+  const real = req.headers.get("x-real-ip")?.trim() ?? "";
+  const xff = (req.headers.get("x-forwarded-for") ?? "")
+    .split(",")[0]
+    ?.trim();
+
+  const client =
+    cf ||
+    real ||
+    xff ||
+    req.ip ||
+    "";
+
+  return { client, cf, real, xff: xff ?? "" };
+}
+
+export function middleware(req: NextRequest) {
+  const pathname = req.nextUrl.pathname;
+
+  const isAdminRoute =
+    pathname.startsWith("/admin-stats") ||
+    pathname.startsWith("/api/admin/leads");
+
+  if (!isAdminRoute) return NextResponse.next();
+
+  // --- 1) IP allowlist (optional) ---
+  const allowed = parseAllowedIPs(process.env.ADMIN_ALLOWED_IPS);
+  const { client, cf, real, xff } = getClientIP(req);
+
+  if (allowed.length > 0 && !allowed.includes(client)) {
+    const debugOn = process.env.ADMIN_DEBUG_IP === "1";
+    const debug = debugOn
+      ? `client=${client} | cf=${cf} | real=${real} | xff=${xff}`
+      : undefined;
+
+    return forbidden(debug);
   }
 
-  // 2) Basic Auth
+  // --- 2) Basic Auth ---
   const user = process.env.ADMIN_BASIC_USER;
   const pass = process.env.ADMIN_BASIC_PASS;
 
-  // Safety: if creds are missing in an environment, don't lock yourself out
+  // Safety: if creds missing, don't lock yourself out
   if (!user || !pass) {
     return withNoIndex(NextResponse.next());
   }
@@ -93,13 +99,11 @@ export function middleware(req: NextRequest) {
   if (!auth?.startsWith("Basic ")) return unauthorized();
 
   const decoded = Buffer.from(auth.slice("Basic ".length), "base64").toString("utf8");
-  const idx = decoded.indexOf(":");
-  const u = idx >= 0 ? decoded.slice(0, idx) : decoded;
-  const p = idx >= 0 ? decoded.slice(idx + 1) : "";
+  const [u, p] = decoded.split(":");
 
   if (u !== user || p !== pass) return unauthorized();
 
-  // 3) Success
+  // --- 3) Success: pass through + noindex header ---
   return withNoIndex(NextResponse.next());
 }
 
