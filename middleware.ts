@@ -1,92 +1,100 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-/**
- * Admin lock:
- * 1) Optional IP allowlist via ADMIN_ALLOWED_IPS (comma-separated IPv4/IPv6)
- * 2) Basic auth via ADMIN_BASIC_USER / ADMIN_BASIC_PASS
- * 3) X-Robots-Tag: noindex on ALL admin responses
- *
- * Optional:
- * - ADMIN_DEBUG_IP=1 will add X-Debug-IP header on 403 responses
- */
-
 const NOINDEX = "noindex, nofollow";
+const REALM = 'Basic realm="Probability Labs Admin"';
 
 function withNoIndex(res: NextResponse) {
   res.headers.set("X-Robots-Tag", NOINDEX);
   return res;
 }
 
-function unauthorized(realm = 'Basic realm="Probability Labs Admin"') {
-  return withNoIndex(
-    new NextResponse("Authentication required", {
-      status: 401,
-      headers: { "WWW-Authenticate": realm },
-    })
-  );
+function unauthorized(req?: NextRequest) {
+  const res = new NextResponse("Authentication required", {
+    status: 401,
+    headers: { "WWW-Authenticate": REALM },
+  });
+
+  // Optional debug
+  if (process.env.ADMIN_DEBUG_IP === "1" && req) {
+    res.headers.set("X-PL-Debug", debugIp(req, "401"));
+  }
+
+  return withNoIndex(res);
 }
 
-function forbidden(debugHeader?: string) {
+function forbidden(req: NextRequest) {
   const res = new NextResponse("Forbidden", { status: 403 });
-  res.headers.set("X-Robots-Tag", NOINDEX);
-  if (debugHeader) res.headers.set("X-Debug-IP", debugHeader);
-  return res;
+
+  // Optional debug
+  if (process.env.ADMIN_DEBUG_IP === "1") {
+    res.headers.set("X-PL-Debug", debugIp(req, "403"));
+  }
+
+  return withNoIndex(res);
 }
 
-function parseAllowedIPs(envValue: string | undefined): string[] {
-  if (!envValue) return [];
-  return envValue
-    .split(",")
+function parseAllowedIps(): string[] {
+  const raw = process.env.ADMIN_ALLOWED_IPS ?? "";
+  return raw
+    .split(/[\s,]+/g) // commas OR whitespace/newlines
     .map((s) => s.trim())
     .filter(Boolean);
 }
 
 /**
- * Prefer Cloudflare's real client IP when available.
- * - cf-connecting-ip: real visitor IP (IPv4/IPv6)
- * - x-real-ip: sometimes set by proxies
- * - x-forwarded-for: first IP can be client, but behind Cloudflare can be noisy
+ * Best-effort client IP extraction behind Cloudflare/Vercel:
+ * 1) cf-connecting-ip (Cloudflare real visitor IP) ✅
+ * 2) x-forwarded-for (first hop)
+ * 3) x-real-ip
  */
-function getClientIP(req: NextRequest) {
-  const cf = req.headers.get("cf-connecting-ip")?.trim() ?? "";
-  const real = req.headers.get("x-real-ip")?.trim() ?? "";
-  const xff = (req.headers.get("x-forwarded-for") ?? "")
-    .split(",")[0]
-    ?.trim();
+function getClientIp(req: NextRequest): string {
+  const cf = req.headers.get("cf-connecting-ip");
+  if (cf) return cf.trim();
 
-  const client =
-    cf ||
-    real ||
-    xff ||
-    req.ip ||
-    "";
+  const xff = req.headers.get("x-forwarded-for");
+  if (xff) return xff.split(",")[0]?.trim() ?? "";
 
-  return { client, cf, real, xff: xff ?? "" };
+  const real = req.headers.get("x-real-ip");
+  if (real) return real.trim();
+
+  return "";
+}
+
+function isIPv4(ip: string) {
+  return ip.includes(".") && !ip.includes(":");
+}
+
+function debugIp(req: NextRequest, code: string) {
+  const cf = req.headers.get("cf-connecting-ip") ?? "";
+  const real = req.headers.get("x-real-ip") ?? "";
+  const xff = req.headers.get("x-forwarded-for") ?? "";
+  const client = getClientIp(req);
+  const allowed = parseAllowedIps().join(",");
+  return `code=${code} client=${client} cf=${cf} real=${real} xff=${xff} allowed=${allowed}`;
 }
 
 export function middleware(req: NextRequest) {
-  const pathname = req.nextUrl.pathname;
+  const path = req.nextUrl.pathname;
 
-  const isAdminRoute =
-    pathname.startsWith("/admin-stats") ||
-    pathname.startsWith("/api/admin/leads");
+  // Only protect admin routes
+  const isAdmin =
+    path.startsWith("/admin-stats") || path.startsWith("/api/admin/leads");
+  if (!isAdmin) return NextResponse.next();
 
-  if (!isAdminRoute) return NextResponse.next();
+  // 1) Optional IP allowlist — but only enforce for IPv4 (stable).
+  // IPv6 often rotates on home ISPs and causes random lockouts.
+  const allowed = parseAllowedIps();
+  if (allowed.length > 0) {
+    const client = getClientIp(req);
 
-  // --- 1) IP allowlist (optional) ---
-  const allowed = parseAllowedIPs(process.env.ADMIN_ALLOWED_IPS);
-  const { client, cf, real, xff } = getClientIP(req);
-
-  if (allowed.length > 0 && !allowed.includes(client)) {
-    const debugOn = process.env.ADMIN_DEBUG_IP === "1";
-    const debug = debugOn
-      ? `client=${client} | cf=${cf} | real=${real} | xff=${xff}`
-      : undefined;
-
-    return forbidden(debug);
+    if (client && isIPv4(client)) {
+      // enforce allowlist for IPv4 only
+      if (!allowed.includes(client)) return forbidden(req);
+    }
+    // if IPv6 (or unknown), skip allowlist and fall through to Basic Auth
   }
 
-  // --- 2) Basic Auth ---
+  // 2) Basic Auth
   const user = process.env.ADMIN_BASIC_USER;
   const pass = process.env.ADMIN_BASIC_PASS;
 
@@ -96,15 +104,24 @@ export function middleware(req: NextRequest) {
   }
 
   const auth = req.headers.get("authorization");
-  if (!auth?.startsWith("Basic ")) return unauthorized();
+  if (!auth?.startsWith("Basic ")) return unauthorized(req);
 
-  const decoded = Buffer.from(auth.slice("Basic ".length), "base64").toString("utf8");
-  const [u, p] = decoded.split(":");
+  let decoded = "";
+  try {
+    decoded = Buffer.from(auth.slice("Basic ".length), "base64").toString("utf8");
+  } catch {
+    return unauthorized(req);
+  }
 
-  if (u !== user || p !== pass) return unauthorized();
+  const idx = decoded.indexOf(":");
+  const u = idx >= 0 ? decoded.slice(0, idx) : "";
+  const p = idx >= 0 ? decoded.slice(idx + 1) : "";
 
-  // --- 3) Success: pass through + noindex header ---
-  return withNoIndex(NextResponse.next());
+  if (u !== user || p !== pass) return unauthorized(req);
+
+  // 3) Success
+  const res = NextResponse.next();
+  return withNoIndex(res);
 }
 
 export const config = {
