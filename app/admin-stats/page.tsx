@@ -39,13 +39,19 @@ export default async function AdminStatsPage() {
           </p>
         </div>
 
-        {/* ✅ Correct CSV download link */}
-        <div>
+        {/* Actions */}
+        <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
+          <a
+            href="/api/admin/leads?format=csv"
+            className="rounded-md border px-4 py-2 text-sm hover:bg-gray-50"
+          >
+            Download leads CSV
+          </a>
           <a
             href="/api/admin/leads"
             className="rounded-md border px-4 py-2 text-sm hover:bg-gray-50"
           >
-            Download leads CSV
+            View JSON
           </a>
         </div>
       </div>
@@ -55,8 +61,10 @@ export default async function AdminStatsPage() {
           <div className="font-medium">Couldn’t load stats</div>
           <div className="mt-1 opacity-90">{error}</div>
           <div className="mt-2 text-xs text-red-600">
-            Check env vars: BACKEND_BASE_URL, ADMIN_API_KEY, ADMIN_PATH
-            (restart dev server after changes).
+            Check env vars on Vercel (and redeploy after changes):{" "}
+            <span className="font-mono">
+              BACKEND_BASE_URL, ADMIN_API_KEY, ADMIN_PATH
+            </span>
           </div>
         </div>
       ) : null}
@@ -117,6 +125,11 @@ export default async function AdminStatsPage() {
               </p>
             )}
           </section>
+
+          <div className="mt-10 text-xs text-gray-400">
+            Tip: use <span className="font-mono">View JSON</span> to quickly
+            verify the API response if anything looks off.
+          </div>
         </>
       ) : null}
     </main>
