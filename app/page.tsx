@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useRef, useState } from "react";
@@ -50,7 +49,7 @@ export default function Page() {
       if (!SITE_KEY) return;
       if (!widgetRef.current) return;
       if (!window.turnstile) return;
-      if (widgetIdRef.current) return; // already rendered
+      if (widgetIdRef.current) return;
 
       widgetIdRef.current = window.turnstile.render(widgetRef.current, {
         sitekey: SITE_KEY,
@@ -84,22 +83,20 @@ export default function Page() {
   };
 
   const join = async () => {
-    if (loading) return; // prevent double clicks
+    if (loading) return;
 
-    console.log("JOIN CLICKED");
     setMessage(null);
 
     if (!API_BASE) {
-      setMessage("Missing NEXT_PUBLIC_API_BASE_URL in Vercel env vars.");
+      setMessage("Missing NEXT_PUBLIC_API_BASE_URL.");
       return;
     }
     if (!SITE_KEY) {
-      setMessage("Missing NEXT_PUBLIC_TURNSTILE_SITE_KEY in Vercel env vars.");
+      setMessage("Missing NEXT_PUBLIC_TURNSTILE_SITE_KEY.");
       return;
     }
 
     const normalizedEmail = email.trim();
-
     if (!normalizedEmail) {
       setMessage("Please enter an email.");
       return;
@@ -118,37 +115,28 @@ export default function Page() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           email: normalizedEmail,
-          turnstile_token: token, // ✅ matches backend LeadIn
+          turnstile_token: token,
         }),
       });
-
-      console.log("FETCH SENT", res.status);
 
       const data: LeadResponse = await res.json().catch(() => ({} as any));
 
       if (!res.ok) {
-        // FastAPI "detail" can be string OR object
         const detail = (data as any)?.detail;
         const detailMsg =
           typeof detail === "string"
             ? detail
             : typeof detail?.message === "string"
-              ? detail.message
-              : null;
+            ? detail.message
+            : null;
 
         throw new Error(detailMsg || (data as any)?.message || `Error ${res.status}`);
       }
 
-      // Show server-provided message if available
-      setMessage((data as any)?.message || "✅ Success!");
-
-      // Clear email either way (created or already exists)
+      setMessage((data as any)?.message || "✅ You’re on the waitlist.");
       setEmail("");
-
-      // Reset Turnstile so future submissions require a fresh token
       resetTurnstile();
     } catch (err: any) {
-      console.error("JOIN FAILED", err);
       setMessage(err?.message || "Something went wrong.");
       resetTurnstile();
     } finally {
@@ -169,7 +157,7 @@ export default function Page() {
         <div className="w-full max-w-xl rounded-2xl border p-8">
           <h1 className="text-4xl font-semibold">ProbLabs</h1>
           <p className="mt-2 text-lg text-gray-600">
-            AI-Powered Lottery Intelligence.
+            AI-Powered Lottery Intelligence
           </p>
 
           <p className="mt-6 text-gray-700">
@@ -178,7 +166,9 @@ export default function Page() {
             <strong>Pick 4</strong>, and <strong>Cash Pop</strong>.
           </p>
 
-          <p className="mt-2 text-gray-500">Launching soon.</p>
+          <p className="mt-2 text-gray-500">
+            Florida-only. Data-backed. No hype. No guarantees.
+          </p>
 
           <form
             onSubmit={(e) => {
@@ -187,7 +177,9 @@ export default function Page() {
             }}
             className="mt-8 space-y-4"
           >
-            <label className="block text-sm font-medium">Get early access</label>
+            <label className="block text-sm font-medium">
+              Get early access
+            </label>
 
             <div className="flex gap-3">
               <input
@@ -209,13 +201,65 @@ export default function Page() {
               </button>
             </div>
 
-            {/* ✅ Visible Turnstile widget */}
             <div ref={widgetRef} className="mt-4" />
 
-            {message && <p className="text-sm text-gray-700">{message}</p>}
+            {message && (
+              <p className="text-sm text-gray-700">{message}</p>
+            )}
           </form>
+
+          {/* FAQ */}
+          <section className="mt-10 border-t pt-6">
+            <h2 className="text-lg font-semibold">FAQ</h2>
+
+            <div className="mt-4 space-y-4 text-sm text-gray-700">
+              <div>
+                <div className="font-semibold text-gray-900">
+                  Is ProbLabs affiliated with the Florida Lottery?
+                </div>
+                <div className="mt-1">
+                  No. ProbLabs (Probability AI Labs) is an independent analytics
+                  project and is not affiliated with the Florida Lottery.
+                </div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-gray-900">
+                  Do you guarantee winnings or “winning numbers”?
+                </div>
+                <div className="mt-1">
+                  No. Lottery games are games of chance. We provide analytical
+                  and educational information only and do not guarantee outcomes.
+                </div>
+              </div>
+
+              <div>
+                <div className="font-semibold text-gray-900">
+                  Which games are included?
+                </div>
+                <div className="mt-1">
+                  Florida-only: Fantasy 5, Pick 3, Pick 4, and Cash Pop.
+                </div>
+              </div>
+            </div>
+          </section>
+
+          {/* Disclaimer */}
+          <section className="mt-6 text-xs leading-relaxed text-gray-500">
+            <p>
+              <strong>Disclaimer:</strong> ProbLabs (Probability AI Labs) is not
+              affiliated with the Florida Lottery. We provide analytical and
+              educational information only and do not guarantee lottery outcomes.
+            </p>
+            <p className="mt-2">
+              <strong>Privacy:</strong> We only use your email to send product
+              updates and early access notices. Unsubscribe anytime using the
+              link in any email.
+            </p>
+          </section>
         </div>
       </main>
     </>
   );
 }
+
