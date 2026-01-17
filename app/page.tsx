@@ -130,7 +130,9 @@ export default function Page() {
             ? detail.message
             : null;
 
-        throw new Error(detailMsg || (data as any)?.message || `Error ${res.status}`);
+        throw new Error(
+          detailMsg || (data as any)?.message || `Error ${res.status}`
+        );
       }
 
       setMessage((data as any)?.message || "✅ You’re on the waitlist.");
@@ -155,8 +157,15 @@ export default function Page() {
 
       <main className="min-h-screen bg-white text-gray-900 flex items-center justify-center">
         <div className="w-full max-w-xl rounded-2xl border p-8">
-          <h1 className="text-4xl font-semibold">ProbLabs</h1>
-          <p className="mt-2 text-lg text-gray-600">
+          {/* Logo */}
+          <img
+            src="/branding/logo-probability-ai-labs.svg"
+            alt="Probability AI Labs"
+            className="mb-4 h-10"
+          />
+
+          <h1 className="text-3xl font-semibold">Probability AI Labs</h1>
+          <p className="mt-1 text-lg text-gray-600">
             AI-Powered Lottery Intelligence
           </p>
 
@@ -215,11 +224,11 @@ export default function Page() {
             <div className="mt-4 space-y-4 text-sm text-gray-700">
               <div>
                 <div className="font-semibold text-gray-900">
-                  Is ProbLabs affiliated with the Florida Lottery?
+                  Is Probability AI Labs affiliated with the Florida Lottery?
                 </div>
                 <div className="mt-1">
-                  No. ProbLabs (Probability AI Labs) is an independent analytics
-                  project and is not affiliated with the Florida Lottery.
+                  No. Probability AI Labs is an independent analytics project and
+                  is not affiliated with the Florida Lottery.
                 </div>
               </div>
 
@@ -247,9 +256,9 @@ export default function Page() {
           {/* Disclaimer */}
           <section className="mt-6 text-xs leading-relaxed text-gray-500">
             <p>
-              <strong>Disclaimer:</strong> ProbLabs (Probability AI Labs) is not
-              affiliated with the Florida Lottery. We provide analytical and
-              educational information only and do not guarantee lottery outcomes.
+              <strong>Disclaimer:</strong> Probability AI Labs is not affiliated
+              with the Florida Lottery. We provide analytical and educational
+              information only and do not guarantee lottery outcomes.
             </p>
             <p className="mt-2">
               <strong>Privacy:</strong> We only use your email to send product
