@@ -157,13 +157,6 @@ export default function Page() {
 
       <main className="min-h-screen bg-white text-gray-900 flex items-center justify-center">
         <div className="w-full max-w-xl rounded-2xl border p-8">
-          {/* Logo */}
-          <img
-            src="/branding/logo-probability-ai-labs.svg"
-            alt="Probability AI Labs"
-            className="mb-4 h-10"
-          />
-
           <h1 className="text-3xl font-semibold">Probability AI Labs</h1>
           <p className="mt-1 text-lg text-gray-600">
             AI-Powered Lottery Intelligence
@@ -239,15 +232,6 @@ export default function Page() {
                 <div className="mt-1">
                   No. Lottery games are games of chance. We provide analytical
                   and educational information only and do not guarantee outcomes.
-                </div>
-              </div>
-
-              <div>
-                <div className="font-semibold text-gray-900">
-                  Which games are included?
-                </div>
-                <div className="mt-1">
-                  Florida-only: Fantasy 5, Pick 3, Pick 4, and Cash Pop.
                 </div>
               </div>
             </div>
