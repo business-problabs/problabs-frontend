@@ -1,263 +1,143 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import Script from "next/script";
-
-declare global {
-  interface Window {
-    turnstile?: {
-      render: (el: HTMLElement, options: any) => string;
-      reset: (widgetId?: string) => void;
-    };
-  }
-}
-
-type LeadResponse =
-  | {
-      ok: true;
-      created: true;
-      message?: string;
-      lead?: { id: number; email: string; created_at: string };
-    }
-  | {
-      ok: true;
-      created: false;
-      message?: string;
-      email?: string;
-    }
-  | {
-      ok?: boolean;
-      message?: string;
-      detail?: any;
-    };
+import { useState } from "react";
+import Image from "next/image";
 
 export default function Page() {
   const [email, setEmail] = useState("");
-  const [token, setToken] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [message, setMessage] = useState<string | null>(null);
+  const [status, setStatus] = useState<"idle" | "loading" | "success" | "error">(
+    "idle"
+  );
+  const [error, setError] = useState<string | null>(null);
 
-  const widgetRef = useRef<HTMLDivElement | null>(null);
-  const widgetIdRef = useRef<string | null>(null);
-
-  const SITE_KEY = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY || "";
-  const API_BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "";
-
-  // Render visible Turnstile
-  useEffect(() => {
-    const tryRender = () => {
-      if (!SITE_KEY) return;
-      if (!widgetRef.current) return;
-      if (!window.turnstile) return;
-      if (widgetIdRef.current) return;
-
-      widgetIdRef.current = window.turnstile.render(widgetRef.current, {
-        sitekey: SITE_KEY,
-        theme: "light",
-        callback: (t: string) => {
-          setToken(t);
-          setMessage(null);
-        },
-        "expired-callback": () => {
-          setToken(null);
-          setMessage("Verification expired. Please complete it again.");
-        },
-        "error-callback": () => {
-          setToken(null);
-          setMessage("Verification failed. Please try again.");
-        },
-      });
-    };
-
-    const interval = setInterval(tryRender, 250);
-    tryRender();
-
-    return () => clearInterval(interval);
-  }, [SITE_KEY]);
-
-  const resetTurnstile = () => {
-    if (window.turnstile && widgetIdRef.current) {
-      window.turnstile.reset(widgetIdRef.current);
-    }
-    setToken(null);
-  };
-
-  const join = async () => {
-    if (loading) return;
-
-    setMessage(null);
-
-    if (!API_BASE) {
-      setMessage("Missing NEXT_PUBLIC_API_BASE_URL.");
-      return;
-    }
-    if (!SITE_KEY) {
-      setMessage("Missing NEXT_PUBLIC_TURNSTILE_SITE_KEY.");
-      return;
-    }
-
-    const normalizedEmail = email.trim();
-    if (!normalizedEmail) {
-      setMessage("Please enter an email.");
-      return;
-    }
-    if (!token) {
-      setMessage("Please complete the verification.");
-      return;
-    }
-
-    setLoading(true);
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setStatus("loading");
+    setError(null);
 
     try {
-      const base = API_BASE.replace(/\/$/, "");
-      const res = await fetch(`${base}/leads`, {
+      const res = await fetch("/api/leads", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: normalizedEmail,
-          turnstile_token: token,
-        }),
+        body: JSON.stringify({ email }),
       });
 
-      const data: LeadResponse = await res.json().catch(() => ({} as any));
-
       if (!res.ok) {
-        const detail = (data as any)?.detail;
-        const detailMsg =
-          typeof detail === "string"
-            ? detail
-            : typeof detail?.message === "string"
-            ? detail.message
-            : null;
-
-        throw new Error(
-          detailMsg || (data as any)?.message || `Error ${res.status}`
-        );
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.detail || "Submission failed");
       }
 
-      setMessage((data as any)?.message || "✅ You’re on the waitlist.");
+      setStatus("success");
       setEmail("");
-      resetTurnstile();
     } catch (err: any) {
-      setMessage(err?.message || "Something went wrong.");
-      resetTurnstile();
-    } finally {
-      setLoading(false);
+      setStatus("error");
+      setError(err.message || "Something went wrong");
     }
-  };
-
-  const joinDisabled = loading || !email.trim() || !token;
+  }
 
   return (
-    <>
-      <Script
-        src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
-        strategy="afterInteractive"
-      />
-
-      <main className="min-h-screen bg-white text-gray-900 flex items-center justify-center">
-        <div className="w-full max-w-xl rounded-2xl border p-8">
-          {/* Brand logo */}
-          <img
+    <main className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+      <div className="w-full max-w-xl bg-white rounded-2xl border border-gray-200 p-8 shadow-sm">
+        {/* Logo only (no duplicate text) */}
+        <div className="mb-6">
+          <Image
             src="/branding/logo-probability-ai-labs.png"
             alt="Probability AI Labs"
-            className="h-10 w-auto mb-4"
+            width={220}
+            height={48}
+            priority
           />
-
-          <h1 className="text-3xl font-semibold">Probability AI Labs</h1>
-          <p className="mt-1 text-lg text-gray-600">
-            AI-Powered Lottery Intelligence
-          </p>
-
-          <p className="mt-6 text-gray-700">
-            We’re building a data-driven analytics platform for Florida Lottery
-            games: <strong>Fantasy 5</strong>, <strong>Pick 3</strong>,{" "}
-            <strong>Pick 4</strong>, and <strong>Cash Pop</strong>.
-          </p>
-
-          <p className="mt-2 text-gray-500">
-            Florida-only. Data-backed. No hype. No guarantees.
-          </p>
-
-          <form
-            onSubmit={(e) => {
-              e.preventDefault();
-              join();
-            }}
-            className="mt-8 space-y-4"
-          >
-            <label className="block text-sm font-medium">
-              Get early access
-            </label>
-
-            <div className="flex gap-3">
-              <input
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="flex-1 rounded-md border px-4 py-2"
-                required
-              />
-
-              <button
-                type="button"
-                onClick={join}
-                disabled={joinDisabled}
-                className="rounded-md bg-black px-5 py-2 text-white disabled:opacity-50"
-              >
-                {loading ? "…" : "Join"}
-              </button>
-            </div>
-
-            <div ref={widgetRef} className="mt-4" />
-
-            {message && <p className="text-sm text-gray-700">{message}</p>}
-          </form>
-
-          {/* FAQ */}
-          <section className="mt-10 border-t pt-6">
-            <h2 className="text-lg font-semibold">FAQ</h2>
-
-            <div className="mt-4 space-y-4 text-sm text-gray-700">
-              <div>
-                <div className="font-semibold text-gray-900">
-                  Is Probability AI Labs affiliated with the Florida Lottery?
-                </div>
-                <div className="mt-1">
-                  No. Probability AI Labs is an independent analytics project and
-                  is not affiliated with the Florida Lottery.
-                </div>
-              </div>
-
-              <div>
-                <div className="font-semibold text-gray-900">
-                  Do you guarantee winnings or “winning numbers”?
-                </div>
-                <div className="mt-1">
-                  No. Lottery games are games of chance. We provide analytical
-                  and educational information only and do not guarantee outcomes.
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* Disclaimer */}
-          <section className="mt-6 text-xs leading-relaxed text-gray-500">
-            <p>
-              <strong>Disclaimer:</strong> Probability AI Labs is not affiliated
-              with the Florida Lottery. We provide analytical and educational
-              information only and do not guarantee lottery outcomes.
-            </p>
-            <p className="mt-2">
-              <strong>Privacy:</strong> We only use your email to send product
-              updates and early access notices. Unsubscribe anytime using the
-              link in any email.
-            </p>
-          </section>
         </div>
-      </main>
-    </>
+
+        {/* Hero */}
+        <h1 className="text-3xl font-bold text-gray-900 mb-2">
+          Probability AI Labs
+        </h1>
+        <p className="text-lg text-gray-600 mb-6">
+          AI-Powered Lottery Intelligence
+        </p>
+
+        <p className="text-gray-700 mb-2">
+          We’re building a data-driven analytics platform for Florida Lottery
+          games:{" "}
+          <strong>Fantasy 5, Pick 3, Pick 4, and Cash Pop.</strong>
+        </p>
+        <p className="text-gray-500 mb-8">
+          Florida-only. Data-backed. No hype. No guarantees.
+        </p>
+
+        {/* Form */}
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <label className="block text-sm font-medium text-gray-800">
+            Get early access
+          </label>
+
+          <div className="flex gap-2">
+            <input
+              type="email"
+              required
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <button
+              type="submit"
+              disabled={status === "loading"}
+              className="rounded-md bg-gray-700 px-4 py-2 text-sm font-medium text-white hover:bg-gray-800 disabled:opacity-50"
+            >
+              Join
+            </button>
+          </div>
+
+          {status === "success" && (
+            <p className="text-sm text-green-600">Success!</p>
+          )}
+          {status === "error" && (
+            <p className="text-sm text-red-600">{error}</p>
+          )}
+        </form>
+
+        {/* Footer */}
+        <hr className="my-8" />
+
+        <div className="space-y-4 text-sm text-gray-700">
+          <h2 className="font-semibold text-gray-900">FAQ</h2>
+
+          <div>
+            <p className="font-medium">
+              Is Probability AI Labs affiliated with the Florida Lottery?
+            </p>
+            <p>
+              No. Probability AI Labs is an independent analytics project and is
+              not affiliated with the Florida Lottery.
+            </p>
+          </div>
+
+          <div>
+            <p className="font-medium">
+              Do you guarantee winnings or “winning numbers”?
+            </p>
+            <p>
+              No. Lottery games are games of chance. We provide analytical and
+              educational information only and do not guarantee outcomes.
+            </p>
+          </div>
+
+          <p className="text-xs text-gray-500 pt-4">
+            <strong>Disclaimer:</strong> Probability AI Labs is not affiliated
+            with the Florida Lottery. We provide analytical and educational
+            information only and do not guarantee lottery outcomes.
+          </p>
+
+          <p className="text-xs text-gray-500">
+            <strong>Privacy:</strong> We only use your email to send product
+            updates and early access notices. Unsubscribe anytime using the link
+            in any email.
+          </p>
+        </div>
+      </div>
+    </main>
   );
 }
 
