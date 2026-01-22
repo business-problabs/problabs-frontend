@@ -2,25 +2,43 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Florida Lottery Data & Probability | Probability AI Labs",
+  metadataBase: new URL("https://www.problabs.net"),
+
+  title: {
+    default: "Florida Lottery Data & Probability | Probability AI Labs",
+    template: "%s | Probability AI Labs",
+  },
+
   description:
     "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, and Cash Pop. No hype. No guarantees.",
+
+  alternates: {
+    canonical: "https://www.problabs.net/",
+  },
+
   icons: {
     icon: [
       { url: "/branding/favicon-16.png", sizes: "16x16", type: "image/png" },
       { url: "/branding/favicon-32.png", sizes: "32x32", type: "image/png" },
     ],
-    apple: [{ url: "/branding/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
+    apple: [
+      {
+        url: "/branding/apple-touch-icon.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
   },
+
   openGraph: {
     title: "Florida Lottery Data & Probability | Probability AI Labs",
     description:
       "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, and Cash Pop. No hype. No guarantees.",
-    url: "https://www.problabs.net",
+    url: "https://www.problabs.net/",
     siteName: "Probability AI Labs",
     images: [
       {
-        url: "/og.png",
+        url: "https://www.problabs.net/og.png",
         width: 1200,
         height: 630,
         alt: "Probability AI Labs",
@@ -29,20 +47,26 @@ export const metadata: Metadata = {
     locale: "en_US",
     type: "website",
   },
+
   twitter: {
     card: "summary_large_image",
     title: "Florida Lottery Data & Probability | Probability AI Labs",
     description:
       "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, and Cash Pop. No hype. No guarantees.",
-    images: ["/og.png"],
+    images: ["https://www.problabs.net/og.png"],
+  },
+
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 
 export default function RootLayout({
   children,
-}: Readonly<{
+}: {
   children: React.ReactNode;
-}>) {
+}) {
   return (
     <html lang="en">
       <body>{children}</body>
