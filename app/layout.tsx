@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Probability AI Labs",
+  title: "Florida Lottery Data & Probability | Probability AI Labs",
   description:
     "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, and Cash Pop. No hype. No guarantees.",
   icons: {
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
     apple: [{ url: "/branding/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
-    title: "Probability AI Labs",
+    title: "Florida Lottery Data & Probability | Probability AI Labs",
     description:
       "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, and Cash Pop. No hype. No guarantees.",
     url: "https://www.problabs.net",
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "Probability AI Labs",
+    title: "Florida Lottery Data & Probability | Probability AI Labs",
     description:
       "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, and Cash Pop. No hype. No guarantees.",
     images: ["/og.png"],
