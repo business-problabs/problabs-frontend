@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import type { ReactNode } from "react";
+import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -33,7 +33,7 @@ export const metadata: Metadata = {
     type: "website",
   },
 
-  // Still named "twitter" in metadata spec even though the brand is X
+  // Yes, it's still called "twitter" in metadata. The meta tags remain twitter:* for compatibility.
   twitter: {
     card: "summary_large_image",
     title: "Florida Lottery Data & Probability | Probability AI Labs",
@@ -43,35 +43,41 @@ export const metadata: Metadata = {
   },
 };
 
-const jsonLd = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  name: "Probability AI Labs",
-  url: "https://www.problabs.net",
-  logo: "https://www.problabs.net/branding/logo-icon.png",
-  description:
-    "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, and Cash Pop. No hype. No guarantees.",
-  areaServed: { "@type": "AdministrativeArea", name: "Florida" },
-  knowsAbout: [
-    "Florida Lottery",
-    "Lottery probability analysis",
-    "Statistical modeling",
-    "Data analytics",
-    "Random number theory",
-  ],
-};
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const jsonLdOrg = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "Probability AI Labs",
+    url: "https://www.problabs.net",
+    logo: "https://www.problabs.net/icon.png",
+    description:
+      "Probability AI Labs provides Florida Lottery data analysis, probability research, and educational insights. We focus exclusively on Florida lottery games using statistical modeling and historical data. No predictions or guarantees are made.",
+    areaServed: { "@type": "AdministrativeArea", name: "Florida" },
+    knowsAbout: [
+      "Florida Lottery",
+      "Lottery probability analysis",
+      "Statistical modeling",
+      "Data analytics",
+      "Random number theory",
+    ],
+    publisher: { "@type": "Organization", name: "Probability AI Labs" },
+  };
 
-export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <head>
-        <script
+      <body>
+        <Script
+          id="jsonld-organization"
           type="application/ld+json"
-          // IMPORTANT: keep it server-rendered so curl can see it
-          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLdOrg) }}
         />
-      </head>
-      <body>{children}</body>
+        {children}
+      </body>
     </html>
   );
 }
