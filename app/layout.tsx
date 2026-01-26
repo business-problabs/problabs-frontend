@@ -1,19 +1,26 @@
 import type { Metadata } from "next";
-import Script from "next/script";
+import type { ReactNode } from "react";
 import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Florida Lottery Data & Probability | Probability AI Labs",
   description:
     "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, and Cash Pop. No hype. No guarantees.",
+
+  icons: {
+    icon: [
+      { url: "/branding/favicon-16.png", sizes: "16x16", type: "image/png" },
+      { url: "/branding/favicon-32.png", sizes: "32x32", type: "image/png" },
+    ],
+    apple: [{ url: "/branding/apple-touch-icon.png" }],
+  },
+
   openGraph: {
     title: "Florida Lottery Data & Probability | Probability AI Labs",
     description:
       "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, and Cash Pop. No hype. No guarantees.",
     url: "https://www.problabs.net",
     siteName: "Probability AI Labs",
-    locale: "en_US",
-    type: "website",
     images: [
       {
         url: "https://www.problabs.net/og.png",
@@ -22,7 +29,11 @@ export const metadata: Metadata = {
         alt: "Probability AI Labs",
       },
     ],
+    locale: "en_US",
+    type: "website",
   },
+
+  // Still named "twitter" in metadata spec even though the brand is X
   twitter: {
     card: "summary_large_image",
     title: "Florida Lottery Data & Probability | Probability AI Labs",
@@ -30,58 +41,37 @@ export const metadata: Metadata = {
       "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, and Cash Pop. No hype. No guarantees.",
     images: ["https://www.problabs.net/og.png"],
   },
-  icons: {
-    icon: [
-      { url: "/branding/favicon-16.png", sizes: "16x16", type: "image/png" },
-      { url: "/branding/favicon-32.png", sizes: "32x32", type: "image/png" },
-    ],
-    apple: "/branding/apple-touch-icon.png",
-  },
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+const jsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  name: "Probability AI Labs",
+  url: "https://www.problabs.net",
+  logo: "https://www.problabs.net/branding/logo-icon.png",
+  description:
+    "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, and Cash Pop. No hype. No guarantees.",
+  areaServed: { "@type": "AdministrativeArea", name: "Florida" },
+  knowsAbout: [
+    "Florida Lottery",
+    "Lottery probability analysis",
+    "Statistical modeling",
+    "Data analytics",
+    "Random number theory",
+  ],
+};
+
+export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en">
-      <body>
-        {/* JSON-LD Structured Data */}
-        <Script
-          id="jsonld-organization"
+      <head>
+        <script
           type="application/ld+json"
-          strategy="afterInteractive"
-          dangerouslySetInnerHTML={{
-            __html: JSON.stringify({
-              "@context": "https://schema.org",
-              "@type": "Organization",
-              name: "Probability AI Labs",
-              url: "https://www.problabs.net",
-              logo: "https://www.problabs.net/icon.png",
-              description:
-                "Probability AI Labs provides Florida Lottery data analysis, probability research, and educational insights. We focus exclusively on Florida lottery games using statistical modeling and historical data. No predictions or guarantees are made.",
-              areaServed: {
-                "@type": "AdministrativeArea",
-                name: "Florida",
-              },
-              knowsAbout: [
-                "Florida Lottery",
-                "Lottery probability analysis",
-                "Statistical modeling",
-                "Data analytics",
-                "Random number theory",
-              ],
-              publisher: {
-                "@type": "Organization",
-                name: "Probability AI Labs",
-              },
-            }),
-          }}
+          // IMPORTANT: keep it server-rendered so curl can see it
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         />
-
-        {children}
-      </body>
+      </head>
+      <body>{children}</body>
     </html>
   );
 }
