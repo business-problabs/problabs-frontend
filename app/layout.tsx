@@ -33,7 +33,6 @@ export const metadata: Metadata = {
     type: "website",
   },
 
-  // Yes, it's still called "twitter" in metadata. The meta tags remain twitter:* for compatibility.
   twitter: {
     card: "summary_large_image",
     title: "Florida Lottery Data & Probability | Probability AI Labs",
@@ -70,6 +69,12 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
+        {/* Cloudflare Turnstile */}
+        <Script
+          src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+          strategy="afterInteractive"
+        />
+
         <Script
           id="jsonld-organization"
           type="application/ld+json"
