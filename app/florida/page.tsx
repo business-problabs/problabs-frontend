@@ -26,6 +26,9 @@ export default function FloridaHubPage() {
             <a href="/florida/fantasy-5">Florida Fantasy 5 analysis</a>
           </li>
           <li>
+            <a href="/florida/pick-5">Florida Pick 5 analysis</a>
+          </li>
+          <li>
             <a href="/florida/pick-3">Florida Pick 3 analysis</a>
           </li>
           <li>
@@ -56,7 +59,13 @@ export default function FloridaHubPage() {
         </p>
       </section>
 
-      <hr style={{ margin: "28px 0", border: "none", borderTop: "1px solid #eee" }} />
+      <hr
+        style={{
+          margin: "28px 0",
+          border: "none",
+          borderTop: "1px solid #eee",
+        }}
+      />
 
       <p style={{ color: "#666", fontSize: 13, lineHeight: 1.6, margin: 0 }}>
         Disclaimer: ProbLabs provides educational and analytical content only. We do
