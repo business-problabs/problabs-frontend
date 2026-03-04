@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import Link from "next/link";
 
 declare global {
   interface Window {
@@ -157,11 +158,39 @@ export default function HomePage() {
 
         <p className="mt-6 text-gray-700">
           We’re building a data-driven analytics platform for Florida Lottery games:{" "}
-          <strong>Fantasy 5</strong>, <strong>Pick 3</strong>, <strong>Pick 4</strong>, and{" "}
-          <strong>Cash Pop</strong>.
+          <Link href="/florida/fantasy-5" className="text-blue-600 hover:underline font-semibold">Fantasy 5</Link>,{" "}
+          <Link href="/florida/pick-3" className="text-blue-600 hover:underline font-semibold">Pick 3</Link>,{" "}
+          <Link href="/florida/pick-4" className="text-blue-600 hover:underline font-semibold">Pick 4</Link>,{" "}
+          <Link href="/florida/pick-5" className="text-blue-600 hover:underline font-semibold">Pick 5</Link>, and{" "}
+          <Link href="/florida/cash-pop" className="text-blue-600 hover:underline font-semibold">Cash Pop</Link>.
         </p>
 
         <p className="mt-2 text-gray-500">Florida-only. Data-backed. No hype. No guarantees.</p>
+
+        {/* Internal links (helps discovery + crawl paths) */}
+        <div className="mt-6 rounded-xl border bg-gray-50 p-4">
+          <p className="text-sm font-medium text-gray-800">Explore our Florida analysis pages:</p>
+          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm">
+            <Link className="underline underline-offset-4 hover:text-gray-700" href="/florida">
+              Florida hub
+            </Link>
+            <Link className="underline underline-offset-4 hover:text-gray-700" href="/florida/pick-3">
+              Pick 3
+            </Link>
+            <Link className="underline underline-offset-4 hover:text-gray-700" href="/florida/pick-4">
+              Pick 4
+            </Link>
+            <Link className="underline underline-offset-4 hover:text-gray-700" href="/florida/pick-5">
+              Pick 5
+            </Link>
+            <Link className="underline underline-offset-4 hover:text-gray-700" href="/florida/fantasy-5">
+              Fantasy 5
+            </Link>
+            <Link className="underline underline-offset-4 hover:text-gray-700" href="/florida/cash-pop">
+              Cash Pop
+            </Link>
+          </div>
+        </div>
 
         <form onSubmit={onSubmit} className="mt-8 space-y-4">
           <label className="block text-sm font-medium" htmlFor="email">
@@ -239,4 +268,3 @@ export default function HomePage() {
     </main>
   );
 }
-

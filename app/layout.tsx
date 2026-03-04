@@ -5,7 +5,7 @@ import "./globals.css";
 export const metadata: Metadata = {
   title: "Florida Lottery Data & Probability | Probability AI Labs",
   description:
-    "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, and Cash Pop. No hype. No guarantees.",
+    "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, Pick 5, and Cash Pop. No hype. No guarantees.",
 
   icons: {
     icon: [
@@ -18,7 +18,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Florida Lottery Data & Probability | Probability AI Labs",
     description:
-      "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, and Cash Pop. No hype. No guarantees.",
+      "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, Pick 5, and Cash Pop. No hype. No guarantees.",
     url: "https://www.problabs.net",
     siteName: "Probability AI Labs",
     images: [
@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Florida Lottery Data & Probability | Probability AI Labs",
     description:
-      "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, and Cash Pop. No hype. No guarantees.",
+      "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, Pick 5, and Cash Pop. No hype. No guarantees.",
     images: ["https://www.problabs.net/og.png"],
   },
 };

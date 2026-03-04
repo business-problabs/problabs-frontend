@@ -58,7 +58,7 @@ export default function AboutPage() {
         <h2 style={{ fontSize: 22, marginBottom: 10 }}>Games covered</h2>
         <p style={{ margin: 0, lineHeight: 1.7 }}>
           We currently focus on: <strong>Fantasy 5</strong>, <strong>Pick 3</strong>,{" "}
-          <strong>Pick 4</strong>, and <strong>Cash Pop</strong>.
+          <strong>Pick 4</strong>, <strong>Pick 5</strong>, and <strong>Cash Pop</strong>.
         </p>
       </section>
 
