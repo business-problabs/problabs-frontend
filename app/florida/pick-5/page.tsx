@@ -17,12 +17,11 @@ export const metadata: Metadata = {
 
 // 1. Server-side fetch function to pull from your live Render API
 async function getPick5Data() {
-  // Uses your env variable, or falls back to your specific Render URL
   const apiBase = process.env.NEXT_PUBLIC_API_BASE_URL || "https://problabs-backend.onrender.com";
   
   try {
     const res = await fetch(`${apiBase}/api/v1/results/pick-5/latest`, {
-      next: { revalidate: 3600 } // Cache the data for 1 hour to save server load
+      next: { revalidate: 3600 } // Cache the data for 1 hour
     });
     
     if (!res.ok) throw new Error('Failed to fetch data');
@@ -44,6 +43,17 @@ export default async function FloridaPick5Page() {
 
   return (
     <main className="mx-auto max-w-4xl px-6 py-12">
+      
+      {/* NAVIGATION - BACK TO HOME */}
+      <nav className="mb-8">
+        <Link 
+          href="/" 
+          className="text-sm font-medium text-white/50 hover:text-white transition-colors flex w-fit items-center gap-2"
+        >
+          <span>&larr;</span> Back to Home
+        </Link>
+      </nav>
+
       <header className="mb-10">
         <h1 className="text-4xl font-bold tracking-tight text-white">
           Florida Pick 5 Odds &amp; Analysis (Straight vs Box)
