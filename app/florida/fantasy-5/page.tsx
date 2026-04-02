@@ -46,11 +46,11 @@ export default async function Fantasy5Page() {
       
       {/* NAVIGATION - BACK TO HOME */}
       <nav className="mb-8">
-        <Link 
-          href="/" 
-          className="text-sm font-medium text-white/50 hover:text-white transition-colors flex w-fit items-center gap-2"
+        <Link
+          href="/"
+          className="text-base font-semibold text-white/70 hover:text-white transition-colors flex w-fit items-center gap-2 py-2"
         >
-          <span>&larr;</span> Back to Home
+          <span className="text-xl leading-none">←</span> Back to Home
         </Link>
       </nav>
 
