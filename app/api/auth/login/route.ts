@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+
 const BACKEND_URL = process.env.BACKEND_URL || "https://problabs-backend.onrender.com";
+
 export async function POST(request: NextRequest) {
   let email = "";
   const ct = request.headers.get("content-type") || "";
@@ -17,5 +19,6 @@ export async function POST(request: NextRequest) {
     body: JSON.stringify({ email }),
   });
   if (!resp.ok) return NextResponse.json({ error: "Failed to send magic link" }, { status: 502 });
-  return NextResponse.redirect(new URL("/login?sent=true", request.url));
+  const response = NextResponse.redirect(new URL("/login?sent=true", request.url), 303);
+  return response;
 }
