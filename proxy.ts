@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const COOKIE_NAME = "problabs_token";
-const PROTECTED_PATHS = ["/dashboard", "/pro"];
+const PROTECTED_PATHS = ["/dashboard"];
 
 function getClientIp(req: NextRequest): string {
   const cf = req.headers.get("cf-connecting-ip");
