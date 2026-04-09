@@ -1,9 +1,32 @@
-import Link from "next/link";
+'use client';
+import { useState } from 'react';
+import Link from 'next/link';
 
-export default async function LoginPage({ searchParams }: { searchParams: Promise<{ sent?: string; error?: string }> }) {
-  const params = await searchParams;
-  const sent = params?.sent === "true";
-  const error = params?.error;
+export default function LoginPage() {
+  const [sent, setSent] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setLoading(true);
+    setError('');
+    const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement).value;
+    try {
+      const resp = await fetch('https://problabs-backend.onrender.com/auth/magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email }),
+      });
+      if (!resp.ok) throw new Error('Failed');
+      setSent(true);
+    } catch {
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
   return (
     <main className="mx-auto max-w-md px-6 py-20">
       <nav className="mb-8">
@@ -20,11 +43,13 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           </div>
         ) : (
           <>
-            {error && <p className="text-red-400 text-sm mb-4">Something went wrong. Please try again.</p>}
+            {error && <p className="text-red-400 text-sm mb-4">{error}</p>}
             <p className="text-white/60 text-sm mb-8">Enter your email to receive a magic sign-in link.</p>
-            <form action="/api/auth/login" method="POST" className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <input name="email" type="email" required placeholder="you@example.com" className="w-full rounded-xl border border-white/20 bg-white/5 px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-white/40" />
-              <button type="submit" className="w-full rounded-xl bg-white px-6 py-3 text-sm font-semibold text-black hover:bg-white/90 transition-colors">Send magic link</button>
+              <button type="submit" disabled={loading} className="w-full rounded-xl bg-white px-6 py-3 text-sm font-semibold text-black hover:bg-white/90 transition-colors disabled:opacity-50">
+                {loading ? 'Sending...' : 'Send magic link'}
+              </button>
             </form>
           </>
         )}
