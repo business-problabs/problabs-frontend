@@ -11,7 +11,7 @@ export async function POST(request: NextRequest) {
     email = fd.get("email")?.toString() || "";
   }
   if (!email) return NextResponse.json({ error: "Email required" }, { status: 400 });
-  const resp = await fetch(`${BACKEND_URL}/auth/login`, {
+  const resp = await fetch(`${BACKEND_URL}/auth/magic-link`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
