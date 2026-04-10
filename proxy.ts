@@ -69,7 +69,7 @@ function protectAuth(req: NextRequest) {
   return NextResponse.next({ request: { headers } });
 }
 
-export function proxy(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
   // Auth-protected routes
