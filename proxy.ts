@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const COOKIE_NAME = "problabs_token";
+const COOKIE_NAME = "problabs_session";
 const PROTECTED_PATHS = ["/dashboard"];
 
 function getClientIp(req: NextRequest): string {
@@ -69,7 +69,7 @@ function protectAuth(req: NextRequest) {
   return NextResponse.next({ request: { headers } });
 }
 
-export function middleware(req: NextRequest) {
+export function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
   // Auth-protected routes
