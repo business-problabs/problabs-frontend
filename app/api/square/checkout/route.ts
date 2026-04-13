@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 const BACKEND_URL = process.env.BACKEND_URL || "https://problabs-backend.onrender.com";
-const COOKIE_NAME = "problabs_token";
+const COOKIE_NAME = "problabs_session";
 export async function POST(request: NextRequest) {
   const token = request.cookies.get(COOKIE_NAME)?.value;
   if (!token) return NextResponse.json({ error: "Not authenticated" }, { status: 401 });

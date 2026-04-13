@@ -13,7 +13,7 @@ export default function LoginPage() {
     setError('');
     const email = (e.currentTarget.elements.namedItem('email') as HTMLInputElement).value;
     try {
-      const resp = await fetch('https://problabs-backend.onrender.com/auth/magic-link', {
+      const resp = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email }),

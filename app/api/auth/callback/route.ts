@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 const BACKEND_URL = process.env.BACKEND_URL || "https://problabs-backend.onrender.com";
-const COOKIE_NAME = "problabs_token";
+const COOKIE_NAME = "problabs_session";
 const COOKIE_MAX_AGE = 60 * 60 * 24 * 7;
 
 export async function GET(request: NextRequest) {
