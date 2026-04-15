@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies } from "next/headers";
 
 const BACKEND_URL = process.env.BACKEND_URL || "https://problabs-backend.onrender.com";
 const COOKIE_NAME = "problabs_session";
@@ -24,15 +23,23 @@ export async function GET(request: NextRequest) {
     if (!jwt) {
       return NextResponse.redirect(new URL("/login?error=no_jwt", request.url));
     }
-    const cookieStore = await cookies();
-    cookieStore.set(COOKIE_NAME, jwt, {
-      httpOnly: true,
-      secure: true,
-      sameSite: "lax",
-      maxAge: COOKIE_MAX_AGE,
-      path: "/",
+
+    // Return a 200 HTML page that sets the cookie and immediately redirects.
+    // Using 200 (not 307) prevents Vercel's edge from stripping Set-Cookie headers
+    // that are dropped on redirect responses.
+    const cookieHeader = `${COOKIE_NAME}=${jwt}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${COOKIE_MAX_AGE}`;
+    const html = `<!DOCTYPE html><html><head>
+<meta http-equiv="refresh" content="0;url=/dashboard">
+<script>window.location.replace("/dashboard");</script>
+</head><body>Signing in...</body></html>`;
+
+    return new NextResponse(html, {
+      status: 200,
+      headers: {
+        "Content-Type": "text/html; charset=utf-8",
+        "Set-Cookie": cookieHeader,
+      },
     });
-    return NextResponse.redirect(new URL("/dashboard", request.url));
   } catch (err) {
     return NextResponse.redirect(new URL("/login?error=fetch_error", request.url));
   }
