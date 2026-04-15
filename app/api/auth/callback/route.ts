@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cookies } from "next/headers";
 
 const BACKEND_URL = process.env.BACKEND_URL || "https://problabs-backend.onrender.com";
 const COOKIE_NAME = "problabs_session";
@@ -23,15 +24,15 @@ export async function GET(request: NextRequest) {
     if (!jwt) {
       return NextResponse.redirect(new URL("/login?error=no_jwt", request.url));
     }
-    const response = NextResponse.redirect(new URL("/dashboard", request.url));
-    response.cookies.set(COOKIE_NAME, jwt, {
+    const cookieStore = await cookies();
+    cookieStore.set(COOKIE_NAME, jwt, {
       httpOnly: true,
       secure: true,
       sameSite: "lax",
       maxAge: COOKIE_MAX_AGE,
       path: "/",
     });
-    return response;
+    return NextResponse.redirect(new URL("/dashboard", request.url));
   } catch (err) {
     return NextResponse.redirect(new URL("/login?error=fetch_error", request.url));
   }
