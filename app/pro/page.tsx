@@ -26,7 +26,7 @@ const PRO_FEATURES = [
 
 export default async function ProPage() {
   const cookieStore = await cookies();
-  const token = cookieStore.get("problabs_token")?.value;
+  const token = cookieStore.get("problabs_session")?.value;
 
   // Decode email from JWT payload (no verification needed here — middleware handles auth)
   let email = "";
