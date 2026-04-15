@@ -19,7 +19,7 @@ async function getUser(token: string) {
 
 export default async function DashboardPage() {
   const cookieStore = await cookies();
-  const token = cookieStore.get("problabs_token")?.value;
+  const token = cookieStore.get("problabs_session")?.value;
   if (!token) redirect("/login");
 
   const user = await getUser(token);
