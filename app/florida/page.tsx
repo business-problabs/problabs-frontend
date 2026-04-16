@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "Florida Lottery Analysis & Probability Insights | ProbLabs",
@@ -9,6 +10,22 @@ export const metadata: Metadata = {
 export default function FloridaHubPage() {
   return (
     <main style={{ maxWidth: 900, margin: "0 auto", padding: "48px 20px" }}>
+      <nav style={{ marginBottom: 24 }}>
+        <Link
+          href="/"
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            fontSize: 20,
+            fontWeight: 700,
+            color: "#1d4ed8",
+            textDecoration: "none",
+          }}
+        >
+          <span style={{ fontSize: 28, lineHeight: 1 }}>←</span> Back to Home
+        </Link>
+      </nav>
       <header style={{ marginBottom: 28 }}>
         <h1 style={{ fontSize: 34, lineHeight: 1.2, margin: 0 }}>
           Florida Lottery Analysis: Probability, Odds & Game Behavior

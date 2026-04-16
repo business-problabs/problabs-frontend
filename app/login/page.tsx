@@ -30,8 +30,8 @@ export default function LoginPage() {
   return (
     <main className="mx-auto max-w-md px-6 py-20">
       <nav className="mb-8">
-        <Link href="/" className="text-base font-semibold text-white/70 hover:text-white transition-colors flex w-fit items-center gap-2 py-2">
-          <span className="text-xl leading-none">←</span> Back to Home
+        <Link href="/" className="text-xl font-bold text-blue-400 hover:text-blue-200 transition-colors flex w-fit items-center gap-2 py-2">
+          <span className="text-3xl leading-none">←</span> Back to Home
         </Link>
       </nav>
       <div className="rounded-2xl border border-white/10 bg-white/5 p-8">

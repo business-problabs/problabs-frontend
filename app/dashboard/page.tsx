@@ -28,8 +28,8 @@ export default async function DashboardPage() {
   return (
     <main className="mx-auto max-w-2xl px-6 py-20">
       <nav className="mb-8 flex items-center justify-between">
-        <Link href="/" className="text-base font-semibold text-white/70 hover:text-white transition-colors flex w-fit items-center gap-2 py-2">
-          <span className="text-xl leading-none">←</span> Back to Home
+        <Link href="/" className="text-xl font-bold text-blue-400 hover:text-blue-200 transition-colors flex w-fit items-center gap-2 py-2">
+          <span className="text-3xl leading-none">←</span> Back to Home
         </Link>
         <form method="POST" action="/api/auth/logout">
           <button type="submit" className="text-sm font-semibold text-white/50 hover:text-white transition-colors py-2 px-3 rounded-lg hover:bg-white/5">
