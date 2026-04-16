@@ -68,20 +68,26 @@ export default async function DashboardPage() {
               </div>
               <span className="text-white/30 group-hover:text-white/60 transition-colors">→</span>
             </Link>
-            <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-5 py-4 opacity-50 cursor-not-allowed">
+            <Link
+              href="/dashboard/extended-variance"
+              className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-5 py-4 hover:bg-white/10 transition-colors group"
+            >
               <div>
-                <p className="text-sm font-semibold text-white/50">Extended Variance Analysis</p>
-                <p className="text-xs text-white/30 mt-0.5">Coming soon</p>
+                <p className="text-sm font-semibold text-white group-hover:text-white">Extended Variance Analysis</p>
+                <p className="text-xs text-white/40 mt-0.5">Per-position digit breakdown for Pick 3, 4 &amp; 5</p>
               </div>
-              <span className="text-white/20">→</span>
-            </div>
-            <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-5 py-4 opacity-50 cursor-not-allowed">
+              <span className="text-white/30 group-hover:text-white/60 transition-colors">→</span>
+            </Link>
+            <Link
+              href="/dashboard/alerts"
+              className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-5 py-4 hover:bg-white/10 transition-colors group"
+            >
               <div>
-                <p className="text-sm font-semibold text-white/50">Automated Draw Alerts</p>
-                <p className="text-xs text-white/30 mt-0.5">Coming soon</p>
+                <p className="text-sm font-semibold text-white group-hover:text-white">Automated Draw Alerts</p>
+                <p className="text-xs text-white/40 mt-0.5">Email alerts for all 5 Florida Lottery games</p>
               </div>
-              <span className="text-white/20">→</span>
-            </div>
+              <span className="text-white/30 group-hover:text-white/60 transition-colors">→</span>
+            </Link>
           </div>
         </div>
       )}
