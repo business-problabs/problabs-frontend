@@ -56,8 +56,33 @@ export default async function DashboardPage() {
       )}
       {user.is_pro && (
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
-          <h2 className="text-xl font-semibold text-white mb-2">Pro features</h2>
-          <p className="text-white/60 text-sm">Your Pro features are active. More tools coming soon.</p>
+          <h2 className="text-xl font-semibold text-white mb-4">Pro features</h2>
+          <div className="space-y-3">
+            <Link
+              href="/dashboard/backtesting"
+              className="flex items-center justify-between rounded-xl border border-white/10 bg-white/5 px-5 py-4 hover:bg-white/10 transition-colors group"
+            >
+              <div>
+                <p className="text-sm font-semibold text-white group-hover:text-white">Historical Backtesting</p>
+                <p className="text-xs text-white/40 mt-0.5">Digit frequency across 3m, 6m, 1y, all-time</p>
+              </div>
+              <span className="text-white/30 group-hover:text-white/60 transition-colors">→</span>
+            </Link>
+            <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-5 py-4 opacity-50 cursor-not-allowed">
+              <div>
+                <p className="text-sm font-semibold text-white/50">Extended Variance Analysis</p>
+                <p className="text-xs text-white/30 mt-0.5">Coming soon</p>
+              </div>
+              <span className="text-white/20">→</span>
+            </div>
+            <div className="flex items-center justify-between rounded-xl border border-white/5 bg-white/[0.02] px-5 py-4 opacity-50 cursor-not-allowed">
+              <div>
+                <p className="text-sm font-semibold text-white/50">Automated Draw Alerts</p>
+                <p className="text-xs text-white/30 mt-0.5">Coming soon</p>
+              </div>
+              <span className="text-white/20">→</span>
+            </div>
+          </div>
         </div>
       )}
     </main>
