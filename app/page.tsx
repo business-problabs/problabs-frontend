@@ -153,8 +153,13 @@ export default function HomePage() {
           />
         </div>
 
-        <h1 className="text-4xl font-semibold text-center">Probability AI Labs</h1>
-        <p className="mt-2 text-lg text-gray-600 text-center">AI-Powered Lottery Intelligence</p>
+        <div className="flex items-center justify-between mb-1">
+          <h1 className="text-4xl font-semibold">Probability AI Labs</h1>
+          <Link href="/login" className="text-sm font-medium text-gray-500 hover:text-gray-800 transition-colors">
+            Sign in →
+          </Link>
+        </div>
+        <p className="mt-2 text-lg text-gray-600">AI-Powered Lottery Intelligence</p>
 
         <p className="mt-6 text-gray-700">
           We’re building a data-driven analytics platform for Florida Lottery games:{" "}
@@ -188,6 +193,24 @@ export default function HomePage() {
             </Link>
             <Link className="underline underline-offset-4 hover:text-gray-700" href="/florida/cash-pop">
               Cash Pop
+            </Link>
+          </div>
+        </div>
+
+        {/* Pro plan CTA */}
+        <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-5">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold text-blue-900">ProbLabs Pro — $9.99/mo</p>
+              <p className="mt-1 text-sm text-blue-700">
+                Historical backtesting, extended variance analysis, and automated draw alerts.
+              </p>
+            </div>
+            <Link
+              href="/pro"
+              className="ml-4 flex-shrink-0 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 transition-colors"
+            >
+              View Pro
             </Link>
           </div>
         </div>
