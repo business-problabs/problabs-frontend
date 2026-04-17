@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
+import CancelSubscriptionButton from "./CancelSubscriptionButton";
 
 const BACKEND_URL = process.env.BACKEND_URL || "https://problabs-backend.onrender.com";
 
@@ -25,6 +26,11 @@ export default async function DashboardPage() {
   const user = await getUser(token);
   if (!user) redirect("/login");
 
+  // subscription_status: "active" | "cancelling" | "inactive"
+  const subscriptionStatus: "active" | "cancelling" | "inactive" =
+    user.subscription_status ?? (user.is_pro ? "active" : "inactive");
+  const subscriptionEndsAt: string | null = user.subscription_ends_at ?? null;
+
   return (
     <main className="mx-auto max-w-2xl px-6 py-20">
       <nav className="mb-8 flex items-center justify-between">
@@ -37,6 +43,7 @@ export default async function DashboardPage() {
           </button>
         </form>
       </nav>
+
       <div className="rounded-2xl border border-white/10 bg-white/5 p-8 mb-6">
         <h1 className="text-3xl font-bold tracking-tight text-white mb-2">Welcome back</h1>
         <p className="text-white/60 text-sm">{user.email}</p>
@@ -44,7 +51,18 @@ export default async function DashboardPage() {
           <span className={`w-2 h-2 rounded-full ${user.is_pro ? "bg-blue-400" : "bg-white/30"}`}></span>
           <span className="text-xs font-medium text-white/60">{user.is_pro ? "Pro" : "Free plan"}</span>
         </div>
+
+        {/* Cancel subscription button / cancelling notice — only shown for Pro users */}
+        {user.is_pro && (
+          <div className="mt-2">
+            <CancelSubscriptionButton
+              subscriptionStatus={subscriptionStatus}
+              subscriptionEndsAt={subscriptionEndsAt}
+            />
+          </div>
+        )}
       </div>
+
       {!user.is_pro && (
         <div className="rounded-2xl border border-blue-500/30 bg-blue-600/10 p-8">
           <h2 className="text-xl font-semibold text-white mb-2">Upgrade to Pro</h2>
@@ -54,6 +72,7 @@ export default async function DashboardPage() {
           </Link>
         </div>
       )}
+
       {user.is_pro && (
         <div className="rounded-2xl border border-white/10 bg-white/5 p-8">
           <h2 className="text-xl font-semibold text-white mb-4">Pro features</h2>
