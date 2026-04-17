@@ -39,24 +39,27 @@ export default function HomePage() {
 
         {/* Internal links (helps discovery + crawl paths) */}
         <div className="mt-6 rounded-xl border bg-gray-50 p-4">
-          <p className="text-sm font-medium text-gray-800">Explore our Florida analysis pages:</p>
-          <div className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm">
-            <Link className="underline underline-offset-4 hover:text-gray-700" href="/florida">
+          <div className="flex items-center gap-2 mb-2">
+            <p className="text-sm font-medium text-gray-800">Explore our Florida analysis pages:</p>
+            <span className="text-xs font-semibold text-blue-600 bg-blue-100 border border-blue-200 rounded-full px-2 py-0.5">Free</span>
+          </div>
+          <div className="flex flex-wrap gap-x-4 gap-y-2 text-sm">
+            <Link className="text-blue-600 font-semibold underline underline-offset-4 hover:text-blue-800" href="/florida">
               Florida hub
             </Link>
-            <Link className="underline underline-offset-4 hover:text-gray-700" href="/florida/pick-3">
+            <Link className="text-blue-600 font-semibold underline underline-offset-4 hover:text-blue-800" href="/florida/pick-3">
               Pick 3
             </Link>
-            <Link className="underline underline-offset-4 hover:text-gray-700" href="/florida/pick-4">
+            <Link className="text-blue-600 font-semibold underline underline-offset-4 hover:text-blue-800" href="/florida/pick-4">
               Pick 4
             </Link>
-            <Link className="underline underline-offset-4 hover:text-gray-700" href="/florida/pick-5">
+            <Link className="text-blue-600 font-semibold underline underline-offset-4 hover:text-blue-800" href="/florida/pick-5">
               Pick 5
             </Link>
-            <Link className="underline underline-offset-4 hover:text-gray-700" href="/florida/fantasy-5">
+            <Link className="text-blue-600 font-semibold underline underline-offset-4 hover:text-blue-800" href="/florida/fantasy-5">
               Fantasy 5
             </Link>
-            <Link className="underline underline-offset-4 hover:text-gray-700" href="/florida/cash-pop">
+            <Link className="text-blue-600 font-semibold underline underline-offset-4 hover:text-blue-800" href="/florida/cash-pop">
               Cash Pop
             </Link>
           </div>
