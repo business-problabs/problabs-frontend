@@ -140,10 +140,7 @@ export default async function ProPage() {
             <p className="font-semibold text-white/90 mb-1">Can I cancel anytime?</p>
             <p>Yes. Cancel anytime from your dashboard. Your Pro access continues until the end of the billing period.</p>
           </div>
-          <div>
-            <p className="font-semibold text-white/90 mb-1">Is this sandbox/test mode?</p>
-            <p>Yes — payments are currently in sandbox mode. No real charges will be made.</p>
-          </div>
+
         </div>
       </section>
 
