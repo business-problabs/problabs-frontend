@@ -107,7 +107,33 @@ export default function HomePage() {
           </div>
         </section>
 
-        <section className="mt-6 text-xs leading-relaxed text-gray-500">
+        {/* Social links */}
+        <div className="mt-6 flex items-center gap-4">
+          <a
+            href="https://www.facebook.com/groups/2010891982792398"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-800 transition-colors"
+          >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M22 12c0-5.523-4.477-10-10-10S2 6.477 2 12c0 4.991 3.657 9.128 8.438 9.878v-6.987H7.898V12h2.54V9.797c0-2.506 1.492-3.89 3.777-3.89 1.094 0 2.238.195 2.238.195v2.46h-1.26c-1.243 0-1.63.771-1.63 1.562V12h2.773l-.443 2.89h-2.33v6.988C18.343 21.128 22 16.991 22 12z"/>
+            </svg>
+            Facebook Group
+          </a>
+          <a
+            href="https://x.com/shark4350"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 text-sm font-semibold text-gray-800 hover:text-black transition-colors"
+          >
+            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+              <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-4.714-6.231-5.401 6.231H2.744l7.73-8.835L1.254 2.25H8.08l4.253 5.622 5.91-5.622zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+            </svg>
+            Follow on X
+          </a>
+        </div>
+
+        <section className="mt-4 text-xs leading-relaxed text-gray-500">
           <p>
             <strong>Disclaimer:</strong> Probability AI Labs is not affiliated with the Florida Lottery.
             We provide analytical and educational information only and do not guarantee lottery outcomes.
