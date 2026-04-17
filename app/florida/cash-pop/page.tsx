@@ -114,11 +114,11 @@ export default async function CashPopPage() {
           <ul className="space-y-3 text-sm text-white/75">
             <li className="flex justify-between border-b border-white/10 pb-2">
               <span>Hottest Number</span>
-              <span className="font-mono text-blue-400">{variance.hot_digit} ({variance.hot_rate})</span>
+              <span className="font-mono text-orange-400">{variance.hot_digit} ({variance.hot_rate})</span>
             </li>
             <li className="flex justify-between border-b border-white/10 pb-2">
               <span>Coldest Number</span>
-              <span className="font-mono text-purple-400">{variance.cold_digit} ({variance.cold_rate})</span>
+              <span className="font-mono text-blue-400">{variance.cold_digit} ({variance.cold_rate})</span>
             </li>
             <li className="flex justify-between pt-1">
               <span>Expected Uniform Mean</span>

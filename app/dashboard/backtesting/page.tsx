@@ -163,15 +163,15 @@ export default async function BacktestingPage({
               <p className="text-2xl font-bold text-white">{data.total_draws.toLocaleString()}</p>
               <p className="text-xs text-white/30 mt-1">{gameLabel} · {periodLabel}</p>
             </div>
-            <div className="rounded-2xl border border-blue-500/20 bg-blue-600/10 p-5">
-              <p className="text-xs text-blue-400/70 uppercase tracking-wider mb-1">Hottest</p>
-              <p className="text-2xl font-bold text-blue-400">{data.hot_digit}</p>
-              <p className="text-xs text-blue-400/50 mt-1">{data.hot_rate} of draws</p>
+            <div className="rounded-2xl border border-orange-500/20 bg-orange-600/10 p-5">
+              <p className="text-xs text-orange-400/70 uppercase tracking-wider mb-1">Hottest</p>
+              <p className="text-2xl font-bold text-orange-400">{data.hot_digit}</p>
+              <p className="text-xs text-orange-400/50 mt-1">{data.hot_rate} of draws</p>
             </div>
-            <div className="rounded-2xl border border-purple-500/20 bg-purple-600/10 p-5">
-              <p className="text-xs text-purple-400/70 uppercase tracking-wider mb-1">Coldest</p>
-              <p className="text-2xl font-bold text-purple-400">{data.cold_digit}</p>
-              <p className="text-xs text-purple-400/50 mt-1">{data.cold_rate} of draws</p>
+            <div className="rounded-2xl border border-blue-500/20 bg-blue-600/10 p-5">
+              <p className="text-xs text-blue-400/70 uppercase tracking-wider mb-1">Coldest</p>
+              <p className="text-2xl font-bold text-blue-400">{data.cold_digit}</p>
+              <p className="text-xs text-blue-400/50 mt-1">{data.cold_rate} of draws</p>
             </div>
           </div>
 
@@ -198,9 +198,9 @@ export default async function BacktestingPage({
                     <div
                       className={`flex-shrink-0 w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold border ${
                         isHot
-                          ? "bg-blue-600/20 border-blue-500/40 text-blue-400"
+                          ? "bg-orange-600/20 border-orange-500/40 text-orange-400"
                           : isCold
-                          ? "bg-purple-600/20 border-purple-500/40 text-purple-400"
+                          ? "bg-blue-600/20 border-blue-500/40 text-blue-400"
                           : "bg-white/5 border-white/10 text-white/70"
                       }`}
                     >
@@ -210,7 +210,7 @@ export default async function BacktestingPage({
                     <div className="flex-1 h-2 bg-white/5 rounded-full overflow-hidden">
                       <div
                         className={`h-full rounded-full transition-all ${
-                          isHot ? "bg-blue-500" : isCold ? "bg-purple-500" : "bg-white/20"
+                          isHot ? "bg-orange-500" : isCold ? "bg-blue-500" : "bg-white/20"
                         }`}
                         style={{ width: `${barWidth}%` }}
                       />
@@ -222,7 +222,7 @@ export default async function BacktestingPage({
                     {/* Rate */}
                     <span
                       className={`w-14 text-right text-sm font-semibold ${
-                        isHot ? "text-blue-400" : isCold ? "text-purple-400" : "text-white/60"
+                        isHot ? "text-orange-400" : isCold ? "text-blue-400" : "text-white/60"
                       }`}
                     >
                       {item.rate}
@@ -230,12 +230,12 @@ export default async function BacktestingPage({
                     {/* Badge */}
                     <span className="w-12 text-right">
                       {isHot && (
-                        <span className="text-xs font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full px-2 py-0.5">
+                        <span className="text-xs font-semibold text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-full px-2 py-0.5">
                           Hot
                         </span>
                       )}
                       {isCold && (
-                        <span className="text-xs font-semibold text-purple-400 bg-purple-500/10 border border-purple-500/20 rounded-full px-2 py-0.5">
+                        <span className="text-xs font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full px-2 py-0.5">
                           Cold
                         </span>
                       )}

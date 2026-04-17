@@ -214,10 +214,10 @@ export default async function ExtendedVariancePage({
                     <h2 className="text-sm font-semibold text-white">{pos.label}</h2>
                   </div>
                   <div className="flex items-center gap-4 text-xs">
-                    <span className="text-blue-400 font-semibold">
+                    <span className="text-orange-400 font-semibold">
                       Hot: <span className="font-mono">{pos.hot_digit}</span> ({pos.hot_rate})
                     </span>
-                    <span className="text-purple-400 font-semibold">
+                    <span className="text-blue-400 font-semibold">
                       Cold: <span className="font-mono">{pos.cold_digit}</span> ({pos.cold_rate})
                     </span>
                   </div>
@@ -231,22 +231,22 @@ export default async function ExtendedVariancePage({
                       <div key={item.digit} className="px-6 py-2.5 flex items-center gap-4">
                         <span className="w-5 text-center text-xs font-mono text-white/25">{i + 1}</span>
                         <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border ${
-                          isHot  ? "bg-blue-600/20 border-blue-500/40 text-blue-400"
-                               : isCold ? "bg-purple-600/20 border-purple-500/40 text-purple-400"
+                          isHot  ? "bg-orange-600/20 border-orange-500/40 text-orange-400"
+                               : isCold ? "bg-blue-600/20 border-blue-500/40 text-blue-400"
                                : "bg-white/5 border-white/10 text-white/70"}`}>
                           {item.digit}
                         </div>
                         <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full transition-all ${isHot ? "bg-blue-500" : isCold ? "bg-purple-500" : "bg-white/20"}`}
+                          <div className={`h-full rounded-full transition-all ${isHot ? "bg-orange-500" : isCold ? "bg-blue-500" : "bg-white/20"}`}
                             style={{ width: `${barWidth}%` }} />
                         </div>
                         <span className="w-12 text-right text-xs font-mono text-white/40">{item.count.toLocaleString()}</span>
-                        <span className={`w-12 text-right text-sm font-semibold ${isHot ? "text-blue-400" : isCold ? "text-purple-400" : "text-white/60"}`}>
+                        <span className={`w-12 text-right text-sm font-semibold ${isHot ? "text-orange-400" : isCold ? "text-blue-400" : "text-white/60"}`}>
                           {item.rate}
                         </span>
                         <span className="w-12 text-right">
-                          {isHot  && <span className="text-xs font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full px-2 py-0.5">Hot</span>}
-                          {isCold && <span className="text-xs font-semibold text-purple-400 bg-purple-500/10 border border-purple-500/20 rounded-full px-2 py-0.5">Cold</span>}
+                          {isHot  && <span className="text-xs font-semibold text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-full px-2 py-0.5">Hot</span>}
+                          {isCold && <span className="text-xs font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full px-2 py-0.5">Cold</span>}
                         </span>
                       </div>
                     );
@@ -262,10 +262,10 @@ export default async function ExtendedVariancePage({
               <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
                 <h2 className="text-sm font-semibold text-white">Overall Number Frequency</h2>
                 <div className="flex items-center gap-4 text-xs">
-                  <span className="text-blue-400 font-semibold">
+                  <span className="text-orange-400 font-semibold">
                     Hot: <span className="font-mono">{data.hot_digit}</span> ({data.hot_rate})
                   </span>
-                  <span className="text-purple-400 font-semibold">
+                  <span className="text-blue-400 font-semibold">
                     Cold: <span className="font-mono">{data.cold_digit}</span> ({data.cold_rate})
                   </span>
                 </div>
@@ -280,22 +280,22 @@ export default async function ExtendedVariancePage({
                     <div key={item.digit} className="px-6 py-2.5 flex items-center gap-4">
                       <span className="w-5 text-center text-xs font-mono text-white/25">{i + 1}</span>
                       <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border ${
-                        isHot  ? "bg-blue-600/20 border-blue-500/40 text-blue-400"
-                             : isCold ? "bg-purple-600/20 border-purple-500/40 text-purple-400"
+                        isHot  ? "bg-orange-600/20 border-orange-500/40 text-orange-400"
+                             : isCold ? "bg-blue-600/20 border-blue-500/40 text-blue-400"
                              : "bg-white/5 border-white/10 text-white/70"}`}>
                         {item.digit}
                       </div>
                       <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full transition-all ${isHot ? "bg-blue-500" : isCold ? "bg-purple-500" : "bg-white/20"}`}
+                        <div className={`h-full rounded-full transition-all ${isHot ? "bg-orange-500" : isCold ? "bg-blue-500" : "bg-white/20"}`}
                           style={{ width: `${barWidth}%` }} />
                       </div>
                       <span className="w-12 text-right text-xs font-mono text-white/40">{item.count.toLocaleString()}</span>
-                      <span className={`w-12 text-right text-sm font-semibold ${isHot ? "text-blue-400" : isCold ? "text-purple-400" : "text-white/60"}`}>
+                      <span className={`w-12 text-right text-sm font-semibold ${isHot ? "text-orange-400" : isCold ? "text-blue-400" : "text-white/60"}`}>
                         {item.rate}
                       </span>
                       <span className="w-12 text-right">
-                        {isHot  && <span className="text-xs font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full px-2 py-0.5">Hot</span>}
-                        {isCold && <span className="text-xs font-semibold text-purple-400 bg-purple-500/10 border border-purple-500/20 rounded-full px-2 py-0.5">Cold</span>}
+                        {isHot  && <span className="text-xs font-semibold text-orange-400 bg-orange-500/10 border border-orange-500/20 rounded-full px-2 py-0.5">Hot</span>}
+                        {isCold && <span className="text-xs font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full px-2 py-0.5">Cold</span>}
                       </span>
                     </div>
                   );

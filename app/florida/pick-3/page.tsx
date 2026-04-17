@@ -95,7 +95,7 @@ export default async function Pick3Page() {
               <p className="text-sm text-white/50 mb-1">Evening (9:45 PM ET)</p>
               <div className="flex gap-2">
                 {eveningDraw.map((digit: string, i: number) => (
-                  <div key={`eve-${i}`} className="flex h-12 w-12 items-center justify-center rounded-full bg-purple-600/20 text-purple-400 text-lg font-bold border border-purple-500/30">
+                  <div key={`eve-${i}`} className="flex h-12 w-12 items-center justify-center rounded-full bg-white/5 text-white/70 text-lg font-bold border border-white/10">
                     {digit}
                   </div>
                 ))}
@@ -110,11 +110,11 @@ export default async function Pick3Page() {
           <ul className="space-y-3 text-sm text-white/75">
             <li className="flex justify-between border-b border-white/10 pb-2">
               <span>Hottest Digit (Pos 1)</span>
-              <span className="font-mono text-blue-400">{variance.hot_digit} ({variance.hot_rate})</span>
+              <span className="font-mono text-orange-400">{variance.hot_digit} ({variance.hot_rate})</span>
             </li>
             <li className="flex justify-between border-b border-white/10 pb-2">
               <span>Coldest Digit (Pos 2)</span>
-              <span className="font-mono text-purple-400">{variance.cold_digit} ({variance.cold_rate})</span>
+              <span className="font-mono text-blue-400">{variance.cold_digit} ({variance.cold_rate})</span>
             </li>
             <li className="flex justify-between border-b border-white/10 pb-2">
               <span>Evening Double Rate</span>
