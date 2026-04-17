@@ -5,9 +5,11 @@ import Link from "next/link";
 const BACKEND_URL = process.env.BACKEND_URL || "https://problabs-backend.onrender.com";
 
 const GAMES = [
-  { id: "pick-3", label: "Pick 3", positions: 3 },
-  { id: "pick-4", label: "Pick 4", positions: 4 },
-  { id: "pick-5", label: "Pick 5", positions: 5 },
+  { id: "pick-3",    label: "Pick 3",    positional: true  },
+  { id: "pick-4",    label: "Pick 4",    positional: true  },
+  { id: "pick-5",    label: "Pick 5",    positional: true  },
+  { id: "fantasy-5", label: "Fantasy 5", positional: false },
+  { id: "cash-pop",  label: "Cash Pop",  positional: false },
 ];
 
 const PERIODS = [
@@ -34,6 +36,19 @@ async function getPositionVariance(game: string, period: string) {
   try {
     const resp = await fetch(
       `${BACKEND_URL}/api/v1/results/${game}/position-variance?period=${period}`,
+      { cache: "no-store" }
+    );
+    if (!resp.ok) return null;
+    return await resp.json();
+  } catch {
+    return null;
+  }
+}
+
+async function getOverallVariance(game: string, period: string) {
+  try {
+    const resp = await fetch(
+      `${BACKEND_URL}/api/v1/results/${game}/variance?period=${period}`,
       { cache: "no-store" }
     );
     if (!resp.ok) return null;
@@ -71,13 +86,18 @@ export default async function ExtendedVariancePage({
   if (!user.is_pro) redirect("/pro");
 
   const params = await searchParams;
-  const game   = GAMES.find(g => g.id === params.game)?.id  ?? "pick-3";
-  const period = PERIODS.find(p => p.id === params.period)?.id ?? "3m";
+  const gameObj = GAMES.find(g => g.id === params.game) ?? GAMES[0];
+  const game    = gameObj.id;
+  const period  = PERIODS.find(p => p.id === params.period)?.id ?? "3m";
 
-  const data = await getPositionVariance(game, period);
+  const isPositional = gameObj.positional;
+  const data = isPositional
+    ? await getPositionVariance(game, period)
+    : await getOverallVariance(game, period);
 
-  const positions: PositionData[] = data?.positions ?? [];
-  const gameLabel   = GAMES.find(g => g.id === game)?.label ?? game;
+  const positions: PositionData[] = isPositional ? (data?.positions ?? []) : [];
+  const overallRanked: RankedDigit[] = !isPositional ? (data?.ranked ?? []) : [];
+  const gameLabel   = gameObj.label;
   const periodLabel = PERIODS.find(p => p.id === period)?.label ?? period;
 
   return (
@@ -111,7 +131,7 @@ export default async function ExtendedVariancePage({
           Extended Variance Analysis
         </h1>
         <p className="mt-2 text-white/50 text-sm">
-          Digit frequency broken down by draw position. Reveals which digits dominate specific slots — not the draw as a whole.
+          Pick 3/4/5: digit frequency broken down by draw position. Fantasy 5 &amp; Cash Pop: overall number frequency ranked across all draws.
         </p>
       </div>
 
@@ -169,18 +189,23 @@ export default async function ExtendedVariancePage({
             <p className="text-2xl font-bold text-white mt-0.5">{data.total_draws.toLocaleString()}</p>
           </div>
           <div className="w-px h-10 bg-white/10" />
-          <p className="text-sm text-white/50">{gameLabel} · {periodLabel} · {positions.length} positions</p>
+          <p className="text-sm text-white/50">
+            {gameLabel} · {periodLabel} ·{" "}
+            {isPositional
+              ? `${positions.length} positions`
+              : `${data.total_digits?.toLocaleString() ?? "–"} numbers drawn`}
+          </p>
         </div>
       )}
 
-      {/* Position cards */}
+      {/* Results */}
       {data ? (
         <div className="space-y-6">
-          {positions.map((pos) => {
+          {/* ── Positional view (Pick 3 / 4 / 5) ── */}
+          {isPositional && positions.map((pos) => {
             const maxCount = pos.ranked.length > 0 ? pos.ranked[0].count : 1;
             return (
               <div key={pos.position} className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
-                {/* Position header */}
                 <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
                   <div className="flex items-center gap-3">
                     <span className="w-8 h-8 rounded-full bg-white/10 border border-white/20 flex items-center justify-center text-sm font-bold text-white">
@@ -197,8 +222,6 @@ export default async function ExtendedVariancePage({
                     </span>
                   </div>
                 </div>
-
-                {/* Digit rows */}
                 <div className="divide-y divide-white/5">
                   {pos.ranked.map((item, i) => {
                     const barWidth = Math.round((item.count / maxCount) * 100);
@@ -206,53 +229,24 @@ export default async function ExtendedVariancePage({
                     const isCold = item.digit === pos.cold_digit;
                     return (
                       <div key={item.digit} className="px-6 py-2.5 flex items-center gap-4">
-                        {/* Rank */}
                         <span className="w-5 text-center text-xs font-mono text-white/25">{i + 1}</span>
-                        {/* Digit bubble */}
-                        <div
-                          className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border ${
-                            isHot
-                              ? "bg-blue-600/20 border-blue-500/40 text-blue-400"
-                              : isCold
-                              ? "bg-purple-600/20 border-purple-500/40 text-purple-400"
-                              : "bg-white/5 border-white/10 text-white/70"
-                          }`}
-                        >
+                        <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border ${
+                          isHot  ? "bg-blue-600/20 border-blue-500/40 text-blue-400"
+                               : isCold ? "bg-purple-600/20 border-purple-500/40 text-purple-400"
+                               : "bg-white/5 border-white/10 text-white/70"}`}>
                           {item.digit}
                         </div>
-                        {/* Bar */}
                         <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
-                          <div
-                            className={`h-full rounded-full transition-all ${
-                              isHot ? "bg-blue-500" : isCold ? "bg-purple-500" : "bg-white/20"
-                            }`}
-                            style={{ width: `${barWidth}%` }}
-                          />
+                          <div className={`h-full rounded-full transition-all ${isHot ? "bg-blue-500" : isCold ? "bg-purple-500" : "bg-white/20"}`}
+                            style={{ width: `${barWidth}%` }} />
                         </div>
-                        {/* Count */}
-                        <span className="w-12 text-right text-xs font-mono text-white/40">
-                          {item.count.toLocaleString()}
-                        </span>
-                        {/* Rate */}
-                        <span
-                          className={`w-12 text-right text-sm font-semibold ${
-                            isHot ? "text-blue-400" : isCold ? "text-purple-400" : "text-white/60"
-                          }`}
-                        >
+                        <span className="w-12 text-right text-xs font-mono text-white/40">{item.count.toLocaleString()}</span>
+                        <span className={`w-12 text-right text-sm font-semibold ${isHot ? "text-blue-400" : isCold ? "text-purple-400" : "text-white/60"}`}>
                           {item.rate}
                         </span>
-                        {/* Badge */}
                         <span className="w-12 text-right">
-                          {isHot && (
-                            <span className="text-xs font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full px-2 py-0.5">
-                              Hot
-                            </span>
-                          )}
-                          {isCold && (
-                            <span className="text-xs font-semibold text-purple-400 bg-purple-500/10 border border-purple-500/20 rounded-full px-2 py-0.5">
-                              Cold
-                            </span>
-                          )}
+                          {isHot  && <span className="text-xs font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full px-2 py-0.5">Hot</span>}
+                          {isCold && <span className="text-xs font-semibold text-purple-400 bg-purple-500/10 border border-purple-500/20 rounded-full px-2 py-0.5">Cold</span>}
                         </span>
                       </div>
                     );
@@ -261,6 +255,54 @@ export default async function ExtendedVariancePage({
               </div>
             );
           })}
+
+          {/* ── Overall frequency view (Fantasy 5 / Cash Pop) ── */}
+          {!isPositional && overallRanked.length > 0 && (
+            <div className="rounded-2xl border border-white/10 bg-white/5 overflow-hidden">
+              <div className="px-6 py-4 border-b border-white/10 flex items-center justify-between">
+                <h2 className="text-sm font-semibold text-white">Overall Number Frequency</h2>
+                <div className="flex items-center gap-4 text-xs">
+                  <span className="text-blue-400 font-semibold">
+                    Hot: <span className="font-mono">{data.hot_digit}</span> ({data.hot_rate})
+                  </span>
+                  <span className="text-purple-400 font-semibold">
+                    Cold: <span className="font-mono">{data.cold_digit}</span> ({data.cold_rate})
+                  </span>
+                </div>
+              </div>
+              <div className="divide-y divide-white/5">
+                {overallRanked.map((item, i) => {
+                  const maxCount = overallRanked[0]?.count ?? 1;
+                  const barWidth = Math.round((item.count / maxCount) * 100);
+                  const isHot  = item.digit === data.hot_digit;
+                  const isCold = item.digit === data.cold_digit;
+                  return (
+                    <div key={item.digit} className="px-6 py-2.5 flex items-center gap-4">
+                      <span className="w-5 text-center text-xs font-mono text-white/25">{i + 1}</span>
+                      <div className={`flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold border ${
+                        isHot  ? "bg-blue-600/20 border-blue-500/40 text-blue-400"
+                             : isCold ? "bg-purple-600/20 border-purple-500/40 text-purple-400"
+                             : "bg-white/5 border-white/10 text-white/70"}`}>
+                        {item.digit}
+                      </div>
+                      <div className="flex-1 h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full transition-all ${isHot ? "bg-blue-500" : isCold ? "bg-purple-500" : "bg-white/20"}`}
+                          style={{ width: `${barWidth}%` }} />
+                      </div>
+                      <span className="w-12 text-right text-xs font-mono text-white/40">{item.count.toLocaleString()}</span>
+                      <span className={`w-12 text-right text-sm font-semibold ${isHot ? "text-blue-400" : isCold ? "text-purple-400" : "text-white/60"}`}>
+                        {item.rate}
+                      </span>
+                      <span className="w-12 text-right">
+                        {isHot  && <span className="text-xs font-semibold text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-full px-2 py-0.5">Hot</span>}
+                        {isCold && <span className="text-xs font-semibold text-purple-400 bg-purple-500/10 border border-purple-500/20 rounded-full px-2 py-0.5">Cold</span>}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
 
           {period === "all" && (
             <p className="mt-2 text-xs text-white/30 text-center">
