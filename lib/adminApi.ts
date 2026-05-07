@@ -93,6 +93,14 @@ export type RevokeProResult = {
   has_square_subscription: boolean;
 };
 
+export type ForceRevokeProResult = {
+  ok: boolean;
+  email: string;
+  is_pro: boolean;
+  pro_gifted: boolean;
+  square_subscription_id: string | null;
+};
+
 // ── API calls ────────────────────────────────────────────────────────────────
 
 export async function getAdminStats(): Promise<AdminStats> {
@@ -122,6 +130,14 @@ export async function grantPro(
 
 export async function revokePro(email: string): Promise<RevokeProResult> {
   return adminFetch<RevokeProResult>("/users/revoke-pro", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+}
+
+export async function forceRevokePro(email: string): Promise<ForceRevokeProResult> {
+  return adminFetch<ForceRevokeProResult>("/users/force-revoke-pro", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),

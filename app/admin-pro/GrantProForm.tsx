@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 type ResultBanner = {
   type: "success" | "error";
@@ -8,6 +9,7 @@ type ResultBanner = {
 };
 
 export default function GrantProForm({ onDone }: { onDone?: () => void }) {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [days, setDays] = useState("");
   const [note, setNote] = useState("");
@@ -46,6 +48,7 @@ export default function GrantProForm({ onDone }: { onDone?: () => void }) {
         setDays("");
         setNote("");
         onDone?.();
+        router.refresh();
       }
     } catch (err: any) {
       setResult({ type: "error", message: err.message ?? "Network error" });
@@ -79,6 +82,46 @@ export default function GrantProForm({ onDone }: { onDone?: () => void }) {
         setNote("");
         setDays("");
         onDone?.();
+        router.refresh();
+      }
+    } catch (err: any) {
+      setResult({ type: "error", message: err.message ?? "Network error" });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleForceRevoke(e: React.FormEvent) {
+    e.preventDefault();
+    if (!email.trim()) return;
+    if (
+      !confirm(
+        `FORCE REVOKE Pro from ${email.trim()}?\n\nThis removes Pro access regardless of Square subscription status. The user will lose access immediately.`
+      )
+    )
+      return;
+    setLoading(true);
+    setResult(null);
+
+    try {
+      const res = await fetch("/api/admin/force-revoke-pro", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok || data.error) {
+        setResult({ type: "error", message: data.error ?? "Request failed" });
+      } else {
+        setResult({
+          type: "success",
+          message: `✓ Force-revoked Pro from ${data.email}. is_pro is now ${data.is_pro}.`,
+        });
+        setEmail("");
+        setNote("");
+        setDays("");
+        onDone?.();
+        router.refresh();
       }
     } catch (err: any) {
       setResult({ type: "error", message: err.message ?? "Network error" });
@@ -120,7 +163,7 @@ export default function GrantProForm({ onDone }: { onDone?: () => void }) {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="user@example.com"
             required
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
           />
         </div>
 
@@ -138,7 +181,7 @@ export default function GrantProForm({ onDone }: { onDone?: () => void }) {
             value={days}
             onChange={(e) => setDays(e.target.value)}
             placeholder="e.g. 30"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
           />
         </div>
 
@@ -153,11 +196,11 @@ export default function GrantProForm({ onDone }: { onDone?: () => void }) {
             value={note}
             onChange={(e) => setNote(e.target.value)}
             placeholder="e.g. beta tester, friend, influencer"
-            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gray-900"
+            className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 bg-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-gray-900"
           />
         </div>
 
-        {/* Buttons */}
+        {/* Grant / Revoke Gift */}
         <div className="flex gap-3 pt-1">
           <button
             onClick={handleGrant}
@@ -172,6 +215,20 @@ export default function GrantProForm({ onDone }: { onDone?: () => void }) {
             className="flex-1 rounded-lg border border-red-300 px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-40 transition-colors"
           >
             Revoke Gift
+          </button>
+        </div>
+
+        {/* Force Revoke for paid users */}
+        <div className="pt-2 border-t border-gray-100">
+          <p className="text-xs text-gray-400 mb-2">
+            For paid Square subscribers — removes Pro regardless of subscription.
+          </p>
+          <button
+            onClick={handleForceRevoke}
+            disabled={loading || !email.trim()}
+            className="w-full rounded-lg border border-orange-300 px-4 py-2 text-sm font-semibold text-orange-600 hover:bg-orange-50 disabled:opacity-40 transition-colors"
+          >
+            Force Revoke (any user)
           </button>
         </div>
       </form>

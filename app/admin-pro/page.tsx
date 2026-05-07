@@ -2,6 +2,8 @@ import "server-only";
 import { listUsers, type AdminUser } from "@/lib/adminApi";
 import GrantProForm from "./GrantProForm";
 
+export const dynamic = "force-dynamic";
+
 function badge(user: AdminUser) {
   if (user.pro_gifted) {
     return (
