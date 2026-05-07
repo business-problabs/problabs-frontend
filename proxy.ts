@@ -52,7 +52,10 @@ function ipAllowed(req: NextRequest): boolean {
 
 function protectAdmin(req: NextRequest) {
   if (process.env.NODE_ENV !== "production") return NextResponse.next();
-  if (!ipAllowed(req)) return forbidden();
+  // IP check is optional — only enforced if ADMIN_ALLOWED_IPS is configured
+  const hasIpList = (process.env.ADMIN_ALLOWED_IPS || "").trim().length > 0;
+  if (hasIpList && !ipAllowed(req)) return forbidden();
+  // Basic Auth is always required in production
   if (!isValidBasicAuth(req)) return unauthorized();
   return NextResponse.next();
 }
