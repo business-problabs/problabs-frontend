@@ -35,6 +35,8 @@ async function adminFetch<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+// ── Types ────────────────────────────────────────────────────────────────────
+
 export type AdminStats = {
   range_days?: number;
   start_date?: string;
@@ -49,7 +51,79 @@ export type AdminStats = {
   daily?: Array<{ date: string; count: number }>;
 };
 
+export type AdminUser = {
+  id: number;
+  email: string;
+  is_pro: boolean;
+  effective_pro: boolean;
+  pro_gifted: boolean;
+  pro_gifted_at: string | null;
+  pro_gifted_note: string | null;
+  subscription_ends_at: string | null;
+  square_subscription_id: string | null;
+  created_at: string | null;
+  last_login_at: string | null;
+};
+
+export type AdminUsersResult = {
+  ok: boolean;
+  total: number;
+  limit: number;
+  offset: number;
+  items: AdminUser[];
+};
+
+export type GrantProResult = {
+  ok: boolean;
+  user_created: boolean;
+  user_id: number;
+  email: string;
+  is_pro: boolean;
+  pro_gifted: boolean;
+  permanent: boolean;
+  subscription_ends_at: string | null;
+  note: string | null;
+};
+
+export type RevokeProResult = {
+  ok: boolean;
+  email: string;
+  gift_was_active: boolean;
+  is_pro: boolean;
+  has_square_subscription: boolean;
+};
+
+// ── API calls ────────────────────────────────────────────────────────────────
+
 export async function getAdminStats(): Promise<AdminStats> {
   return adminFetch<AdminStats>("/stats");
 }
 
+export async function listUsers(
+  limit = 100,
+  offset = 0
+): Promise<AdminUsersResult> {
+  return adminFetch<AdminUsersResult>(
+    `/users?limit=${limit}&offset=${offset}`
+  );
+}
+
+export async function grantPro(
+  email: string,
+  days?: number | null,
+  note?: string | null
+): Promise<GrantProResult> {
+  return adminFetch<GrantProResult>("/users/grant-pro", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, days: days ?? null, note: note ?? null }),
+  });
+}
+
+export async function revokePro(email: string): Promise<RevokeProResult> {
+  return adminFetch<RevokeProResult>("/users/revoke-pro", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+}
