@@ -83,6 +83,7 @@ export function proxy(req: NextRequest) {
   // Admin-protected routes (pages only — API routes are secured by backend ADMIN_API_KEY)
   if (pathname === "/admin-stats") return protectAdmin(req);
   if (pathname === "/admin-pro") return protectAdmin(req);
+  if (pathname.startsWith("/admin/social")) return protectAdmin(req);
 
   const ADMIN_PATH = (process.env.ADMIN_PATH || "").trim();
   if (ADMIN_PATH && pathname.startsWith(ADMIN_PATH)) return protectAdmin(req);
@@ -91,5 +92,11 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin-stats", "/admin-pro"],
+  matcher: [
+    "/dashboard/:path*",
+    "/admin-stats",
+    "/admin-pro",
+    "/admin/social",
+    "/admin/social/:path*",
+  ],
 };
