@@ -3,6 +3,7 @@ import Script from "next/script";
 import "./globals.css";
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://www.problabs.net"),
   title: "Florida Lottery Data & Probability | Probability AI Labs",
   description:
     "Florida-only, data-backed lottery analytics for Fantasy 5, Pick 3, Pick 4, Pick 5, and Cash Pop. No hype. No guarantees.",
