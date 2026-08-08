@@ -4,6 +4,7 @@ export const metadata: Metadata = {
   title: "About ProbLabs | Probability AI Labs",
   description:
     "ProbLabs (Probability AI Labs) is a Florida-only lottery analytics project focused on educational probability insights. Not affiliated with the Florida Lottery.",
+  alternates: { canonical: "/about" },
 };
 
 export default function AboutPage() {

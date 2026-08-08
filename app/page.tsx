@@ -1,5 +1,10 @@
 import React from "react";
 import Link from "next/link";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  alternates: { canonical: "/" },
+};
 
 export default function HomePage() {
   return (
@@ -27,7 +32,7 @@ export default function HomePage() {
         <p className="mt-2 text-lg text-gray-600">AI-Powered Lottery Intelligence</p>
 
         <p className="mt-6 text-gray-700">
-          We’re building a data-driven analytics platform for Florida Lottery games:{" "}
+          We're building a data-driven analytics platform for Florida Lottery games:{" "}
           <Link href="/florida/fantasy-5" className="text-blue-600 hover:underline font-semibold">Fantasy 5</Link>,{" "}
           <Link href="/florida/pick-3" className="text-blue-600 hover:underline font-semibold">Pick 3</Link>,{" "}
           <Link href="/florida/pick-4" className="text-blue-600 hover:underline font-semibold">Pick 4</Link>,{" "}
@@ -97,7 +102,7 @@ export default function HomePage() {
             </div>
             <div>
               <div className="font-semibold text-gray-900">
-                Do you guarantee winnings or “winning numbers”?
+                Do you guarantee winnings or "winning numbers"?
               </div>
               <div className="mt-1">
                 No. Lottery games are games of chance. We provide analytical and educational

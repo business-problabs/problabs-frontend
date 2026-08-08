@@ -5,6 +5,7 @@ export const metadata: Metadata = {
   title: "Florida Lottery Analysis & Probability Insights | ProbLabs",
   description:
     "Educational analysis of Florida lottery games, odds, and probability behavior. Florida-only. No predictions — data-driven insights.",
+  alternates: { canonical: "/florida" },
 };
 
 export default function FloridaHubPage() {
