@@ -74,7 +74,10 @@ export default function HomePage() {
         <div className="mt-6 rounded-xl border border-blue-200 bg-blue-50 p-5">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-semibold text-blue-900">ProbLabs Pro — $9.99/mo</p>
+              <p className="text-sm font-semibold text-blue-900">
+                <span className="line-through text-blue-900/40 mr-2">ProbLabs Pro — $9.99/mo</span>
+                <span className="text-blue-900">Free for a limited time — no credit card required</span>
+              </p>
               <p className="mt-1 text-sm text-blue-700">
                 Historical backtesting, extended variance analysis, and automated draw alerts.
               </p>
