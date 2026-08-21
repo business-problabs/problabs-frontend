@@ -6,6 +6,7 @@ import { cookies } from "next/headers";
 export const metadata: Metadata = {
   title: "ProbLabs Pro — Advanced Florida Lottery Analytics",
   description: "ProbLabs Pro is free for a limited time — historical backtesting, extended variance analysis, and automated draw alerts.",
+  alternates: { canonical: "/pro" },
 };
 
 const PRO_FEATURES = [
