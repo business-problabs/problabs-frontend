@@ -66,9 +66,9 @@ export default async function DashboardPage() {
       {!user.is_pro && (
         <div className="rounded-2xl border border-blue-500/30 bg-blue-600/10 p-8">
           <h2 className="text-xl font-semibold text-white mb-2">Upgrade to Pro</h2>
-          <p className="text-white/60 text-sm mb-6">Unlock historical backtesting, extended variance analysis, and automated draw alerts.</p>
+          <p className="text-white/60 text-sm mb-6">Unlock historical backtesting, extended variance analysis, and automated draw alerts — free.</p>
           <Link href="/pro" className="inline-block rounded-xl bg-white px-6 py-3 text-sm font-semibold text-black hover:bg-white/90 transition-colors">
-            View Pro features — $9.99/mo
+            View Pro features — Free
           </Link>
         </div>
       )}
